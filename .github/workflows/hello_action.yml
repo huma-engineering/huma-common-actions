@@ -16,7 +16,7 @@ jobs:
 
       - name: Run hello action
         id: helloid
-        uses: ./hello/actions.yml
+        uses: ./hello
         with:
           who-to-great: "Brown fox!"
       
