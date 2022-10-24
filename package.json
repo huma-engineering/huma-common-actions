@@ -1,0 +1,21 @@
+{
+  "name": "huma-common-actions",
+  "version": "1.0.0",
+  "description": "Huma's reusable Github Actions",
+  "scripts": {
+    "update_hello_docs": "action-docs -a ./hello/action.yml --toc-level 3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huma-engineering/huma-common-actions.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/huma-engineering/huma-common-actions/issues"
+  },
+  "homepage": "https://github.com/huma-engineering/huma-common-actions#readme",
+  "dependencies": {
+    "action-docs": "^1.1.0"
+  }
+}
