@@ -16,7 +16,7 @@ jobs:
 
       - name: Run hello action
         id: helloid
-        uses: .github/workflows/hello_actions.yml
+        uses: ./.github/workflows/hello_actions.yml
         with:
           who-to-great: "Brown fox!"
       
