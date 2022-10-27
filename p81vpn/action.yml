@@ -13,7 +13,7 @@ inputs:
 outputs:
   ip:
     description: 'The OpenVPN IP'
-    value: ${{ steps.p81.ip-id.outputs.ip }}
+    value: ${{ steps.p81-ip-id.outputs.ip }}
 runs:
   using: "composite"
   steps:
