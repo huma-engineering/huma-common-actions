@@ -28,7 +28,6 @@ runs:
     shell: bash
   - name: Connect VPN
     uses: "kota65535/github-openvpn-connect-action@v1"
-    shell: bash
     with:
       config_file: ./config.ovpn
       username: ${{ inputs.username }}
