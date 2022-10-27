@@ -35,4 +35,4 @@ runs:
   - name: get ip
     id: p81-ip-id
     shell: bash
-    run: echo "ip=$(curl ifconfig.me)" >> $GITHUB_OUTPUT
+    run: echo "ip=$(curl -s ifconfig.me)" >> $GITHUB_OUTPUT
