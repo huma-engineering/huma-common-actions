@@ -24,6 +24,6 @@ jobs:
       
       - name: Print vpn ip which is the same github action runner
         run: |
-          echo "vpn gateway ip is" ${{ steps.p81.outputs.random-number }}
+          echo "vpn gateway ip is" ${{ steps.p81_id.outputs.ip }}
           echo $(curl ifconfig.me)
         
