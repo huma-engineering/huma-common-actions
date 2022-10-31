@@ -16,7 +16,7 @@ jobs:
 
       - name: Run p81 vpn connection
         id: p81_id
-        uses: ./p81vpn
+        uses: ./openvpn-p81
         with:
           configfile-url: ${{ secrets.VPN_CONFIGFILEURL }}
           username: ${{ secrets.VPN_USERNAME }}
