@@ -24,4 +24,62 @@ runs:
       id: diff-dev
       run: |
         echo "${{ secrets.GCP_LON_DEV_KUBECONFIG }}" | base64 --decode > /tmp/config
-          
+          export KUBECONFIG=/tmp/config
+          cd k8s/rpmserver && helmfile --no-color -e gcp-lon-dev -i -l name=ppserver diff > /tmp/diff.txt
+          body="$(cat /tmp/diff.txt)"
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}"
+          echo "::set-output name=body::$body"
+
+      # PR comment
+      - name: Find comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '<summary>helmfile -e gcp-lon-dev -i -l name=ppserver diff</summary>'
+      - name: Create or update comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Diff
+            <details>
+              <summary>helmfile -e gcp-lon-dev -i -l name=ppserver diff</summary>
+
+              ```diff
+              ${{ steps.diff-dev.outputs.body }}
+              ```
+            </details>
+          edit-mode: replace
+      
+  deploy:
+    name: "Deploy [dev]"
+    needs: diff
+    environment: Dev
+    runs-on: ubuntu-latest
+    steps:
+      # checkout
+      - uses: actions/checkout@v2
+
+      # vpn
+      - name: Install Open VPN
+        run: |
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
+      - name: Open VPN Config download
+        run: |
+          curl -s https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/A8owxc3zyg/openvpn-config/download -o config.ovpn
+      - name: Connect VPN
+        uses: "kota65535/github-openvpn-connect-action@v1"
+        with:
+          config_file: ./config.ovpn
+          username: ${{ secrets.VPN_USERNAME }}
+          password: ${{ secrets.VPN_PASSWORD }}
+      - name: Check IP
+        run: curl ifconfig.me
