@@ -1,0 +1,27 @@
+name: Test helmfile-pr action
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # - name: Run p81 vpn connection
+      #   id: p81_id
+      #   uses: ./openvpn-p81
+      #   with:
+      #     configfile-url: ${{ secrets.VPN_CONFIGFILEURL }}
+      #     username: ${{ secrets.VPN_USERNAME }}
+      #     password: ${{ secrets.VPN_PASSWORD }}
+      
+      - name: Helmfile
+        run: |
+          minikube
