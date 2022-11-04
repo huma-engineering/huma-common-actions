@@ -1,0 +1,27 @@
+name: 'Helmfile PR'
+description: 'GH Action for pull request on PR'
+inputs:
+  kubeconfig-content: 
+    description: 'kubeconfig base64 content'
+    required: true
+  helmfile-folder:
+    description: 'kubeconfig base64 content'
+    required: true
+outputs:
+  ip:
+    description: 'The OpenVPN IP'
+    value: ${{ steps.p81-ip-id.outputs.ip }}
+runs:
+  using: "composite"
+  steps:
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v1.0.0
+      with:
+        install-kubectl: no
+        install-helm: no
+
+    - name: Diff of dev
+      id: diff-dev
+      run: |
+        echo "${{ secrets.GCP_LON_DEV_KUBECONFIG }}" | base64 --decode > /tmp/config
+          
