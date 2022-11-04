@@ -24,4 +24,5 @@ jobs:
       
       - name: Helmfile
         run: |
-          minikube
+          minikube start
+          kubectl get po -A
