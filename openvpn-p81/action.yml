@@ -1,0 +1,38 @@
+name: 'OpenVPN Connector for Perimetter81'
+description: 'OpenVPN connected to Perimeter81 through configfile URL'
+inputs:
+  configfile-url: 
+    description: 'OpenVPN config file url'
+    required: true
+  username:
+    description: 'OpenVPN username'
+    required: true
+  password: 
+    description: 'OpenVPN password'
+    required: true
+outputs:
+  ip:
+    description: 'The OpenVPN IP'
+    value: ${{ steps.p81-ip-id.outputs.ip }}
+runs:
+  using: "composite"
+  steps:
+  - name: Install OpenVPN
+    run: |
+      sudo apt update
+      sudo apt install -y openvpn openvpn-systemd-resolved
+    shell: bash
+  - name: Open VPN Config download
+    run: |
+      curl -s ${{ inputs.configfile-url }} -o config.ovpn
+    shell: bash
+  - name: Connect VPN
+    uses: "kota65535/github-openvpn-connect-action@v1"
+    with:
+      config_file: ./config.ovpn
+      username: ${{ inputs.username }}
+      password: ${{ inputs.password }}
+  - name: get ip
+    id: p81-ip-id
+    shell: bash
+    run: echo "ip=$(curl -s ifconfig.me)" >> $GITHUB_OUTPUT
