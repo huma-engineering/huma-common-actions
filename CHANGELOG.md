@@ -12,8 +12,9 @@ project adheres to [Semantic Versioning](http://semver.org/).
 
 <a name="v1.0.0"></a>
 ## [v1.0.0] - 2022-11-07
-
-- Adding helmfile PR and helmfile apply
+Feature:
+- Adding helmfile PR and apply
+- Adding openvpn for Perimeter81 and skeleton
 
 
 <a name="0.1"></a>
