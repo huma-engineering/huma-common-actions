@@ -1,0 +1,44 @@
+name: 'Helmfile apply'
+description: 'GH action for applying the helmfile on the given environment'
+inputs:
+  kubeconfig: 
+    description: 'kubeconfig file path'
+    required: true
+  helmfile-folder:
+    description: 'The folder of the helmfile'
+    required: true
+  helmfile-environment:
+    description: 'The environment of the helmfile'
+    required: true
+    default: default
+  comment-id:
+    description: 'The id of comment to put reaction'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v1.0.0
+      with:
+        install-kubectl: no
+        install-helm: no
+
+    - name: Helmfile apply 
+      shell: bash
+      run: |
+        export KUBECONFIG=${{ inputs.kubeconfig }}
+        cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply
+
+    - name: Put reaction on the comment
+      if: ${{ (inputs.comment-id != null) && (github.event_name == 'pull_request') }}
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        comment-id: ${{ inputs.comment-id }}
+        reactions: rocket
+
+    - uses: actions-ecosystem/action-add-labels@v1
+      if: ${{ (github.event_name == 'pull_request') }}
+      with:
+        labels: deployed
