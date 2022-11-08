@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Huma's reusable Github Actions",
   "scripts": {
-    "update_hello_docs": "action-docs -a ./hello/action.yml --toc-level 3"
+    "update_hello_docs": "action-docs -a ./hello/action.yml --toc-level 3 > hello/README.md",
+    "update_openvpn_p81_docs": "action-docs -a ./openvpn-p81/action.yml --toc-level 3 > openvpn-p81/README.md",
+    "update_helmfile_pr_docs": "action-docs -a ./helmfile-pr-diff/action.yml --toc-level 3 > helmfile-pr-diff/README.md",
+    "update_helmfile_apply_docs": "action-docs -a ./helmfile-apply/action.yml --toc-level 3 > helmfile-apply/README.md"
   },
   "repository": {
     "type": "git",
