@@ -17,7 +17,7 @@ outputs:
     value: ${{ env.diffbody }}
   comment-id:
     description: 'PR comment id'
-    value: ${{ steps.fc.outputs.comment-id }}
+    value: ${{ steps.cuc.outputs.comment-id }}
 
 runs:
   using: "composite"
@@ -51,6 +51,7 @@ runs:
         body-includes: '<summary>helmfile -e ${{ inputs.helmfile-environment }} -i diff</summary>'
     - name: Create or update comment
       if: github.event_name == 'pull_request'
+      id: cuc
       uses: peter-evans/create-or-update-comment@v2
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
