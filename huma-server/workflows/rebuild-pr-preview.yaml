@@ -1,11 +1,8 @@
 name: Rebuild the Huma Server SDK
 
 on:
-  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#issue_comment
-  issue_comment:
-    types: [created]
   workflow_called:
-    inputs: inputs.yaml
+    inputs: "inputs.yaml"
 
 env:
   cluster_name: hu-uk-sandbox-pr-preview-gke
