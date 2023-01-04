@@ -23,9 +23,9 @@ env:
 jobs:
   check:
     name: Put a reaction to show user that GHA acknowledge a command
-    if: ${{ github.event.issue.pull_request
-      && github.event.issue.state == 'open'
-      && startsWith(github.event.comment.body, '/rebuild') }}
+    # if: ${{ github.event.issue.pull_request
+    #   && github.event.issue.state == 'open'
+    #   && startsWith(github.event.comment.body, '/rebuild') }}
     runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
