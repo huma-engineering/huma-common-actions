@@ -1,10 +1,11 @@
 name: Pull request Ops commands help
 
 on:
-  workflow_called:
-    inputs: "inputs.yaml"
-  pull_request:
-    types: [opened]
+  workflow_call:
+    inputs:
+      server_name:
+        required: true
+        type: string
 
 jobs:
   help:
@@ -23,4 +24,5 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |-
+            ${{ inputs.server_name }}
             ${{ steps.template.outputs.result }}

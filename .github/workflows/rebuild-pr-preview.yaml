@@ -1,8 +1,11 @@
 name: Rebuild the Huma Server SDK
 
 on:
-  workflow_called:
-    inputs: "inputs.yaml"
+  workflow_call:
+    inputs:
+      server_name:
+        required: true
+        type: string
 
 env:
   cluster_name: hu-uk-sandbox-pr-preview-gke
