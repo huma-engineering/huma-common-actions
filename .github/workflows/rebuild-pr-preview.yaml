@@ -7,72 +7,52 @@ on:
         required: true
         type: string
 
+env:
+  cluster_name: hu-uk-sandbox-pr-preview-gke
+  location: europe-west2
+  app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
+  app_namespace: pr-preview-${{ github.event.issue.number }}
+  atlas_cluster: hu-uk-sandbox-pr-preview
+  atlas_project: hu-sandbox
+  bucket_provider: ${{ contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3' }}
+  db_provider: ${{ contains(github.event.issue.labels.*.name, 'deployed_atlas_mongodb') && 'atlas' || 'kubedb' }}
+  kubedb_cluster: pr-preview-mongodb-cluster-2
+  kubedb_namespace: kubedb
+  update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
+
 jobs:
-  help:
+  check:
+    name: Put a reaction to show user that GHA acknowledge a command
+    if: ${{ github.event.issue.pull_request
+      && github.event.issue.state == 'open'
+      && startsWith(github.event.comment.body, '/rebuild') }}
     runs-on: ubuntu-latest
+    outputs:
+      head_ref: ${{ steps.comment-branch.outputs.head_ref }}
+      head_sha: ${{ steps.comment-branch.outputs.head_sha }}
+      short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: xt0rted/pull-request-comment-branch@v1
+        id: comment-branch
 
-      - id: template
-        uses: chuhlomin/render-template@v1.4
-        with:
-          template: .github/workflows/help-sdk-pr-preview.md
+      - id: sha
+        name: Get the short of Github commit SHA
+        run: |-
+          SHORT_SHA=$(echo ${{ steps.comment-branch.outputs.head_sha }} | cut -c1-7)
+          echo "::set-output name=short_sha::$SHORT_SHA"
 
-      - name: help
+      - name: Put reaction on the command message
         uses: peter-evans/create-or-update-comment@v2
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ github.event.comment.id }}
+          reactions: eyes
+
+      - name: create a comment before exit
+        if: ${{ !contains(github.event.issue.labels.*.name, 'deployed') }}
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
           body: |-
-            ${{ steps.template.outputs.result }}
-
-
-# # env:
-# #   cluster_name: hu-uk-sandbox-pr-preview-gke
-# #   location: europe-west2
-# #   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
-# #   app_namespace: pr-preview-${{ github.event.issue.number }}
-# #   atlas_cluster: hu-uk-sandbox-pr-preview
-# #   atlas_project: hu-sandbox
-# #   bucket_provider: ${{ contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3' }}
-# #   db_provider: ${{ contains(github.event.issue.labels.*.name, 'deployed_atlas_mongodb') && 'atlas' || 'kubedb' }}
-# #   kubedb_cluster: pr-preview-mongodb-cluster-2
-# #   kubedb_namespace: kubedb
-# #   update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
-
-# jobs:
-#   check:
-#     name: Put a reaction to show user that GHA acknowledge a command
-#     # if: ${{ github.event.issue.pull_request
-#     #   && github.event.issue.state == 'open'
-#     #   && startsWith(github.event.comment.body, '/rebuild') }}
-#     runs-on: ubuntu-latest
-#     # outputs:
-#     #   head_ref: ${{ steps.comment-branch.outputs.head_ref }}
-#     #   head_sha: ${{ steps.comment-branch.outputs.head_sha }}
-#     #   short_sha: ${{ steps.sha.outputs.short_sha }}
-#     steps:
-#       - uses: xt0rted/pull-request-comment-branch@v1
-#         id: comment-branch
-
-#       # - id: sha
-#       #   name: Get the short of Github commit SHA
-#       #   run: |-
-#       #     SHORT_SHA=$(echo ${{ steps.comment-branch.outputs.head_sha }} | cut -c1-7)
-#       #     echo "::set-output name=short_sha::$SHORT_SHA"
-
-#       - name: Put reaction on the command message
-#         uses: peter-evans/create-or-update-comment@v2
-#         with:
-#           comment-id: ${{ github.event.comment.id }}
-#           reactions: eyes
-
-#       # - name: create a comment before exit
-#       #   if: ${{ !contains(github.event.issue.labels.*.name, 'deployed') }}
-#       #   uses: peter-evans/create-or-update-comment@v2
-#       #   with:
-#       #     issue-number: ${{ github.event.issue.number }}
-#       #     body: |-
-#       #       ${{ inputs.server_name }}
-#       #       This PR don't have a preview deployment yet.❌
-#       #       Please use a `/deploy` command first to create one.💡
+            ${{ inputs.server_name }}
+            This PR don't have a preview deployment yet.❌
+            Please use a `/deploy` command first to create one.💡
