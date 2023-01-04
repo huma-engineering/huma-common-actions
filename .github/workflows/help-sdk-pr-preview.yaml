@@ -17,12 +17,11 @@ jobs:
       - id: template
         uses: chuhlomin/render-template@v1.4
         with:
-          template: huma-server/workflows/help-sdk-pr-preview.md
+          template: .github/workflows/help-sdk-pr-preview.md
 
       - name: help
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |-
-            ${{ inputs.server_name }}
             ${{ steps.template.outputs.result }}
