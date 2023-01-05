@@ -24,14 +24,14 @@ runs:
     shell: bash
   - name: Open VPN Config download
     run: |
-      curl -s ${{ inputs.configfile-url }} -o config.ovpn
+      curl -s https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/nacBaYV1dt/openvpn-config/download -o config.ovpn
     shell: bash
   - name: Connect VPN
     uses: "kota65535/github-openvpn-connect-action@v2"
     with:
       config_file: ./config.ovpn
-      username: ${{ inputs.username }}
-      password: ${{ inputs.password }}
+      username: HWEISMkN8DTuBZoH
+      password: bdBYOo0yC5eXEUbeLYFGhbH67CCEmK8U
   - name: get ip
     id: p81-ip-id
     shell: bash
