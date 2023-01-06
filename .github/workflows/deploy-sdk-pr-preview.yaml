@@ -21,7 +21,6 @@ on:
       source_s3_bucket_qa: { required: true, type: string }
       source_s3_bucket_dev: { required: true, type: string }
       make_upload_chart_command: { required: true, type: string }
-      helm_chart_path: { required: true, type: string }
       aws_region: { required: false, type: string, default: 'eu-west-2' }
       dockerfile: { required: true, type: string }
       make_build_push_ghcr: { required: true, type: string }
@@ -41,6 +40,7 @@ env:
   source_s3_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
     inputs.source_s3_bucket_qa || inputs.source_s3_bucket_dev }}
   update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
+  helm_chart_path: ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml
 
 jobs:
   check:
@@ -103,14 +103,14 @@ jobs:
           ref: master
       - id: skip
         run: |
-          ls .. && echo "::set-output name=version::$(yq '.version' ../deploy/charts/infrastructure/Chart.yaml)"
+          echo "::set-output name=version::$(yq '.version' ${{ envs.helm_chart_path }})"
 
       - name: Package and upload the chart
         if: env.update_chart == true
         id: update
         env:
           HELM_EXPERIMENTAL_OCI: "1"
-          path: ${{ inputs.helm_chart_path }}
+          path: ${{ envs.helm_chart_path }}
           tag: "-${{ needs.check.outputs.short_sha }}"
         run: |
           yq '.version += strenv(tag)' -i ${path}
