@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       server_name: { required: true, type: string }
-      cluster_name: { required: true, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+      cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
       cluster_location: { required: false, type: string, default: 'europe-west2' }
       grafana_host: { required: true, type: string }
 
