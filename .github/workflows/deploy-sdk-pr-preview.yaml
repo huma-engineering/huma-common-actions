@@ -103,7 +103,7 @@ jobs:
           ref: master
       - id: skip
         run: |
-          echo "::set-output name=version::$(yq '.version' ./.github/deploy/charts/infrastructure/Chart.yaml)"
+          echo "::set-output name=version::$(yq '.version' ../deploy/charts/infrastructure/Chart.yaml)"
 
       - name: Package and upload the chart
         if: env.update_chart == true
