@@ -103,14 +103,14 @@ jobs:
           ref: master
       - id: skip
         run: |
-          echo "::set-output name=version::$(yq '.version' ${{ envs.helm_chart_path }})"
+          echo "::set-output name=version::$(yq '.version' ${{ env.helm_chart_path }})"
 
       - name: Package and upload the chart
         if: env.update_chart == true
         id: update
         env:
           HELM_EXPERIMENTAL_OCI: "1"
-          path: ${{ envs.helm_chart_path }}
+          path: ${{ env.helm_chart_path }}
           tag: "-${{ needs.check.outputs.short_sha }}"
         run: |
           yq '.version += strenv(tag)' -i ${path}
