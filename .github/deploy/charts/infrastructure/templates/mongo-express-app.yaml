@@ -1,0 +1,57 @@
+{{- with .Values.mongoExpress }}
+{{- $name := include "server.fullname" $ }}
+apiVersion: operator.huma.com/v1alpha1
+kind: Application
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: mongo-express
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if eq $.Values.mongodb.provider "atlas" }}
+  image: {{ .atlas.image }}:{{ .atlas.tag }}
+  {{- else }}
+  image: {{ .kubedb.image }}:{{ .kubedb.tag }}
+  {{- end }}
+  cpu: 50m
+  memory: 64Mi
+  env:
+    - name: ME_CONFIG_OPTIONS_EDITORTHEME
+      value: ambiance
+    {{- if eq $.Values.mongodb.provider "atlas" }}
+    - name: ME_CONFIG_MONGODB_URL
+      valueFrom:
+        secretKeyRef:
+          key: privateConnectionString
+          name: {{ $name }}-db
+    - name: ME_CONFIG_MONGODB_SSL
+      value: "true"
+    {{- else }}
+    - name: ME_CONFIG_MONGODB_URL
+      valueFrom:
+        secretKeyRef:
+          key: connectionString
+          name: {{ $name }}-db
+    {{- end }}
+    {{- if .basicAuth }}
+    - name: ME_CONFIG_BASICAUTH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: user
+          name: {{ $name }}-db
+    - name: ME_CONFIG_BASICAUTH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: {{ $name }}-db
+    {{- end }}
+    - name: ME_CONFIG_SITE_COOKIESECRET
+      value: {{ randAlphaNum 30 }}
+    - name: ME_CONFIG_SITE_SESSIONSECRET
+      value: {{ randAlphaNum 30 }}
+    - name: ME_CONFIG_REQUEST_SIZE
+      value: {{ .requestSize | default "100kb" }}
+    - name: ME_CONFIG_SITE_BASEURL
+      value: {{ .baseUrl | default "/" }}
+  ports:
+    - 80:8081
+{{- end }}

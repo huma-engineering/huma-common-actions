@@ -1,0 +1,29 @@
+{{- with .Values.mongodb }}
+{{- $name := include "server.fullname" $ -}}
+{{- if eq .provider "kubedb" }}
+apiVersion: db.operator.huma.com/v1alpha1
+kind: MongoDBUser
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: {{ $name }}-db
+  namespace: {{ $.Release.Namespace }}
+spec:
+  clusterRef:
+    name: {{ .kubedb.clusterRef.name }}
+    namespace: {{ .kubedb.clusterRef.namespace }}
+  databaseName: {{ $name }}-db
+  roleName: {{ .roleName }}
+{{- else if eq .provider "atlas" }}
+apiVersion: db.operator.huma.com/v1alpha1
+kind: AtlasMongoDBUser
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: {{ $name }}-db
+  namespace: {{ $.Release.Namespace }}
+spec:
+  clusterName: {{ .atlas.clusterName }}
+  databaseName: {{ $name }}-db
+  projectName: {{ .atlas.projectName }}
+  roleName: {{ .roleName }}
+{{- end }}
+{{- end }}

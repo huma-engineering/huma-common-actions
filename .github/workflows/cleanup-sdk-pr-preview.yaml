@@ -4,8 +4,8 @@ on:
   workflow_call:
     inputs:
       server_name: { required: true, type: string }
-      cluster_name: { required: true, type: string }
-      cluster_location: { required: false, type: string }
+      cluster_name: { required: true, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+      cluster_location: { required: false, type: string, default: 'europe-west2' }
       grafana_host: { required: true, type: string }
 
 env:
@@ -27,7 +27,7 @@ jobs:
           cluster_name: ${{ inputs.cluster_name }}
           location: ${{ inputs.cluster_location }}
           app_name: ${{ inputs.server_name }}-${{ env.issue_number }}
-          app_namespace: pr-preview-${{ env.issue_number }}
+          app_namespace: pr-preview-${{ inputs.server_name }}-${{ env.issue_number }}
           delete_namespace: "true"
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
 

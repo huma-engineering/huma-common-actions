@@ -1,0 +1,27 @@
+{{- if eq $.Values.bucket.provider "s3" }}
+{{- with .Values.bucket.s3 }}
+apiVersion: storage.huma.com/v1alpha1
+kind: S3Bucket
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: {{ include "server.fullname" $ }}-bucket
+  namespace: {{ $.Release.Namespace }}
+spec:
+  region: {{ .region }}
+  versioningEnabled: {{ .versioningEnabled }}
+{{- end }}
+{{- else if eq $.Values.bucket.provider "gcs" }}
+{{- with .Values.bucket.gcs }}
+apiVersion: storage.huma.com/v1alpha1
+kind: GCSBucket
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: {{ include "server.fullname" $ }}-bucket
+  namespace: {{ $.Release.Namespace }}
+spec:
+  region: {{ .region }}
+  storageClass: {{ .storageClass }}
+  uniformBucketLevelAccess: {{ .uniformBucketLevelAccess }}
+  versioningEnabled: {{ .versioningEnabled }}
+{{- end }}
+{{- end }}

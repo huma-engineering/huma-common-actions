@@ -1,0 +1,10 @@
+{{- with .Values.redis }}
+apiVersion: redis.operator.huma.com/v1alpha1
+kind: RedisClaim
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: {{ include "server.fullname" $ }}-rc
+  namespace: {{ $.Release.Namespace }}
+spec:
+  storage: {{ .storage }}
+{{- end }}

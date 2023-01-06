@@ -1,0 +1,184 @@
+# Default values for ..
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Huma Clinician Portal container spec.
+cp:
+  image: ghcr.io/huma-engineering/huma-clinician-portal/cp-preview-dev
+  tag: latest
+
+# Clones the selected source bucket to a new GCS or S3 bucket
+bucket:
+  # Select an object storage provider from any of ["s3", "gcs"].
+  provider: s3
+  s3:
+    # a region of a bucket.
+    region: eu-west-2
+    # set true for a versioning-enabled bucket
+    versioningEnabled: false
+  gcs:
+    # a region of a bucket.
+    region: europe-west2
+    # StorageClass is the Storage Class of the new bucket.
+    storageClass: STANDARD
+    # UniformBucketLevelAccess configures access checks to use only bucket-level IAM
+    uniformBucketLevelAccess: true
+    # set true for a versioning-enabled bucket
+    versioningEnabled: false
+
+mongodb:
+  # Select a MongoDB cluster provider from any of ["atlas", "kubedb"].
+  provider: kubedb
+  # A reference to the existing Atlas MongoDB cluster.
+  atlas:
+    clusterName: hu-uk-sandbox-pr-preview
+    projectName: hu-sandbox
+  # KubeDB MongoDB cluster is defined by Kubernetes clusterRef notation.
+  kubedb:
+    clusterRef:
+      name: pr-preview-mongodb-cluster-2
+      namespace: kubedb
+  roleName: readWrite
+
+mongoExpress:
+  # The docker image "mongo-express:latest" used for KubeDB doesn't yet support Atlas
+  # https://github.com/mongo-express/mongo-express/issues/956.
+  # The only option for Atlas is ghcr.io/blackthornyugen/mongo-express-docker:v1.0.0,
+  # but it has bug with pagination, next, last buttons https://github.com/mongo-express/mongo-express/issues/944.
+  atlas:
+    image: ghcr.io/blackthornyugen/mongo-express-docker
+    tag: v1.0.0
+  kubedb:
+    image: mongo-express
+    tag: "1.0.0-alpha.4"
+  baseUrl: /mongo-express/
+  basicAuth: true
+  requestSize: 10000kb
+
+redis:
+  storage: 64Mi
+
+gcpProject:
+  id: hu-global-sandbox
+
+externalSecrets:
+  - name: ppserver-dev-env-secret
+    backendSecretNames:
+      - pp-sandbox-ppserver-dev-env-secret
+  - name: pp-star-sbx-huma-com-secret
+    backendSecretNames:
+      - pp-common-star-sbx-huma-com-crt
+    type: kubernetes.io/tls
+  - name: regcred
+    backendSecretNames:
+      - pp-common-dockerconfigjson
+    type: kubernetes.io/dockerconfigjson
+  - name: hu-uk-sandbox-gcs-read-sa
+    backendSecretNames:
+      - pp-sandbox-hu-uk-sandbox-gcs-read-sa
+
+server:
+  # add here any environment variables which values are not secret ones
+  env:
+    - name: DEBUG_METRICS
+      value: "true"
+    - name: MP_DEBUG_ENABLED
+      value: "true"
+    - name: MP_DEBUG_LOG_ENABLED
+      value: "true"
+    - name: MP_DEBUG_ROUTER_ENABLED
+      value: "true"
+    - name: MP_TEST_ENVIRONMENT_ENABLED
+      value: "true"
+    - name: MP_SWAGGER_ENABLED
+      value: "true"
+    - name: JSON_LOGGING_ENABLED
+      value: "1"
+    - name: RELEASE_DATE
+      value: "2022-08"
+    - name: MP_COUNTRY_NAME
+      value: "United Kingdom"
+    - name: MP_COUNTRY_CODE
+      value: "gb"
+    - name: MP_FROM_EMAIL
+      value: "hey@medopad.com"
+    - name: MP_FCM_SA_FILE_PATH
+      value: "./medopad-firebase.json"
+    - name: MP_SIGNUP_LIMIT
+      value: "10/minute"
+    - name: MP_AUTH_LIMIT
+      value: "50/minute"
+    - name: MP_API_LIMIT
+      value: "500/minute"
+    - name: MP_APNS_USE_SANDBOX
+      value: "true"
+    - name: MP_USER_WEB_BASE_URL
+      value: "https://hu-app-gcp-dev.web.app"
+    - name: MP_ADMIN_WEB_BASE_URL
+      value: "https://hu-admin-gcp-dev.web.app"
+    - name: MP_PAM_INTEGRATION_SUBMIT_SURVEY_URI
+      value: "https://servicesUAT.insigniahealth.com/services/XML/v1.0/ihapi.svc/submitusersurvey"
+    - name: MP_PAM_INTEGRATION_ENROLL_USER_URI
+      value: "https://servicesUAT.insigniahealth.com/services/XML/v1.0/ihapi.svc/enrolluser"
+    - name: MP_KARDIA_BASE_URL
+      value: "https://api-staging.kardia.com"
+    - name: MP_CVD_API_URL
+      value: "http://167.172.62.135/v1beta/calculateCvd"
+    - name: MP_MAILGUN_DOMAIN_URL
+      value: "preprodemail.humatherapeutics.cn"
+    - name: MP_MAILGUN_API_URL_TEMPLATE
+      value: "https://api.mailgun.net/v3/{0}/messages"
+    - name: ONFIDO_REGION
+      value: "EU"
+    - name: MP_IOS_APP_URL
+      value: "https://apps.apple.com/gb/app/huma/id1519444604"
+    - name: MP_ANDROID_APP_URL
+      value: "https://play.google.com/store/apps/details?id=com.huma.humaapp.eu"
+    - name: SENTRY_CLUSTER
+      value: "pp-dev"
+    - name: SENTRY_ENV
+      value: "temp"
+
+# reference here any of secrets you expect to have in app's namespace
+injectSecretKeys:
+  - name: ppserver-dev-env-secret
+    envNames:
+      - MP_JWT_SECRET
+      - MP_MASTER_KEY
+      - HOUNDIFY_CLIENT_ID
+      - HOUNDIFY_CLIENT_KEY
+      - MP_APNS_TEAM_ID
+      - MP_APNS_AUTH_KEY_FILE_PATH
+      - MP_APNS_AUTH_KEY_ID
+      - MP_IOS_APP_ID
+      - MP_APNS_BUNDLE_ID
+      - MP_PAM_INTEGRATION_CLIENT_EXT_ID
+      - MP_PAM_INTEGRATION_CLIENT_PASS_KEY
+      - MP_PAM_INTEGRATION_SUB_GROUP_EXT_ID
+      - MP_KARDIA_API_KEY
+      - MP_CVD_API_USERNAME
+      - MP_CVD_API_PASSWORD
+      - MP_SIGNED_URL_SECRET
+      - MP_ENCRYPTION_SECRET
+      - MP_MAILGUN_API_KEY
+      - MP_TWILIO_ACCOUNT_SID
+      - MP_TWILIO_AUTH_TOKEN
+      - MP_TWILIO_API_KEY
+      - MP_TWILIO_API_SECRET
+      - MP_TWILIO_SMS_SOURCE_PHONE_NUMBER
+      - ONFIDO_API_TOKEN
+      - ONFIDO_WEBHOOK_TOKEN
+      - SENTRY_DSN
+      - MP_FCM_API_KEY
+      - MP_FCM_PROJECT_ID
+      - MP_TWILIO_MEDIA_REGION
+      - MP_TWILIO_SERVICE_SID
+      - MP_TWILIO_VERIFY_SERVICE_SID
+      - MP_ALI_CLOUD_PUSH_ACCESS_KEY
+      - MP_ALI_CLOUD_PUSH_ACCESS_KEY_SECRET
+      - MP_ALI_CLOUD_APP_KEY
+      - MP_BREEZOMETER_API_KEY
+      - MP_GOOGLE_MAPS_API_KEY

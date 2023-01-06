@@ -3,21 +3,22 @@ name: Rebuild the Huma Server SDK
 on:
   workflow_call:
     inputs:
-      server_name:
-        required: true
-        type: string
+      server_name: { required: true, type: string }
+      include_sdk: { required: true, type: boolean }
+      cluster_name: { required: true, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+      cluster_location: { required: false, type: string, default: 'europe-west2' }
+      atlas_cluster: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview' }
+      atlas_project: { required: false, type: string, default: 'hu-sandbox' }
+      kubedb_cluster: { required: true, type: string }
+      kubedb_namespace: { required: false, type: string, default: 'kubedb' }
+      make_upload_chart_command: { required: true, type: string }
+      helm_chart_path: { required: true, type: string }
 
 env:
-  cluster_name: hu-uk-sandbox-pr-preview-gke
-  location: europe-west2
   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
-  app_namespace: pr-preview-${{ github.event.issue.number }}
-  atlas_cluster: hu-uk-sandbox-pr-preview
-  atlas_project: hu-sandbox
+  app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
   bucket_provider: ${{ contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3' }}
   db_provider: ${{ contains(github.event.issue.labels.*.name, 'deployed_atlas_mongodb') && 'atlas' || 'kubedb' }}
-  kubedb_cluster: pr-preview-mongodb-cluster-2
-  kubedb_namespace: kubedb
   update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
 
 jobs:
@@ -53,6 +54,129 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |-
-            ${{ inputs.server_name }}
             This PR don't have a preview deployment yet.❌
             Please use a `/deploy` command first to create one.💡
+
+  chart:
+    name: Package and upload the Helm chart
+    needs: check
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ env.update_chart == true && steps.update.outputs.version || steps.skip.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.check.outputs.head_sha }}
+      - name: Clone Submodule
+        if: ${{ inputs.include_sdk }}
+        uses: actions/checkout@v3
+        with:
+          ssh-key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          repository: huma-engineering/huma-server-sdk
+          path: libs/huma-server-sdk
+          ref: master
+      - id: skip
+        run: |
+          echo "::set-output name=version::$(yq '.version' ${{ inputs.helm_chart_path }})"
+
+      - name: Package and upload the chart
+        if: env.update_chart == true
+        id: update
+        env:
+          HELM_EXPERIMENTAL_OCI: "1"
+          path: ${{ inputs.helm_chart_path }}
+          tag: "-${{ needs.check.outputs.short_sha }}"
+        run: |
+          yq '.version += strenv(tag)' -i ${path}
+          echo ${{ github.token }} |\
+            helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+          make ${{ inputs.make_upload_chart_command }}
+          echo "::set-output name=version::$(yq '.version' ${path})"
+
+  build:
+    if: ${{ contains(github.event.issue.labels.*.name, 'deployed') }}
+    needs: check
+    name: Build and Push Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and Push Container
+        id: build
+        uses: huma-engineering/huma-github-actions/build-server-sdk-container@v0.14.0
+        with:
+          tag: ${{ env.app_namespace }}-${{ needs.check.outputs.short_sha }}
+          github_ref: ${{ needs.check.outputs.head_sha }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_user: ${{ github.actor }}
+          registry: ghcr.io
+          repository: ghcr.io/huma-engineering/py-${{ inputs.server_name }}
+
+      - name: Report on build success
+        if: steps.build.outputs.error == 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Built a new version of the container from the branch `${{needs.check.outputs.head_ref}}`,
+            commit ${{needs.check.outputs.head_sha}}, and pushed it to GHCR.👌
+
+      - name: Report on build failure
+        if: steps.build.outputs.error != 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Failed to build and push container from the branch `${{needs.check.outputs.head_ref}}`,
+            commit ${{needs.check.outputs.head_sha}}.❌
+
+  deploy:
+    if: ${{ contains(github.event.issue.labels.*.name, 'deployed') }}
+    name: Deploy the Helm chart to GKE
+    needs:
+      - build
+      - check
+      - chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy the Helm chart to GKE
+        id: helm
+        uses: huma-engineering/huma-github-actions/deploy-helm-chart-to-gke@v0.19.0
+        with:
+          cluster_name: ${{ inputs.cluster_name }}
+          location: ${{ inputs.cluster_location }}
+          app_name: ${{ env.app_name }}
+          app_namespace: ${{ env.app_namespace }}
+          atlas_cluster: ${{ inputs.atlas_cluster }}
+          atlas_project: ${{ inputs.atlas_project }}
+          bucket_provider: ${{ env.bucket_provider }}
+          db_provider: ${{ env.db_provider }}
+          kubedb_namespace: ${{ inputs.kubedb_namespace }}
+          kubedb_cluster: ${{ inputs.kubedb_cluster }}
+          image_repository: ghcr.io/huma-engineering/py-${{ inputs.server_name }}
+          image_tag: ${{ env.app_namespace }}-${{ needs.check.outputs.short_sha }}
+          chart_url: oci://ghcr.io/huma-engineering/helm-charts/huma-server-sdk
+          version: ${{ needs.chart.outputs.version }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          clean_workload: "true"
+
+      - name: Report on deploy success
+        if: steps.helm.outputs.error == 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Deployed a new version of the ${{ inputs.server_name }} container built from the commit ${{
+              needs.check.outputs.head_sha }}, the helm chart version `${{ needs.chart.outputs.version }}`.✅
+            [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id) }})
+
+      - name: Report on deploy failure
+        if: steps.helm.outputs.error != 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Failed to deploy a new version of the ${{ inputs.server_name }} container built from the commit ${{
+              needs.check.outputs.head_sha }}, the helm chart version `${{ needs.chart.outputs.version }}`.❌
+            [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id) }})
