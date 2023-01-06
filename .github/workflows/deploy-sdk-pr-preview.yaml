@@ -103,7 +103,7 @@ jobs:
           ref: master
       - id: skip
         run: |
-          echo "::set-output name=version::$(yq '.version' ${{ env.helm_chart_path }})"
+          echo 'AAAA: ${{ github.action_path }}\n' && echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml)"
 
       - name: Package and upload the chart
         if: env.update_chart == true
