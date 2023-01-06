@@ -87,37 +87,14 @@ jobs:
     name: Package and upload the Helm chart
     needs: check
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ env.update_chart == true && steps.update.outputs.version || steps.skip.outputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: ./.github/actions/package-upload-helm-chart
         with:
-          ref: ${{ needs.check.outputs.head_sha }}
-      - name: Clone Submodule
-        if: ${{ inputs.include_sdk }}
-        uses: actions/checkout@v3
-        with:
-          ssh-key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
-          repository: huma-engineering/huma-server-sdk
-          path: libs/huma-server-sdk
-          ref: master
-      - id: skip
-        run: |
-          echo 'AAAA: ${{ github.action_path }}\n' && echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml)"
-
-      - name: Package and upload the chart
-        if: env.update_chart == true
-        id: update
-        env:
-          HELM_EXPERIMENTAL_OCI: "1"
-          path: ${{ env.helm_chart_path }}
-          tag: "-${{ needs.check.outputs.short_sha }}"
-        run: |
-          yq '.version += strenv(tag)' -i ${path}
-          echo ${{ github.token }} |\
-            helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
-          make ${{ inputs.make_upload_chart_command }}
-          echo "::set-output name=version::$(yq '.version' ${path})"
+          head_sha: ${{ needs.check.outputs.head_sha }}
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          short_sha: ${{ needs.check.outputs.short_sha }}
+          update_chart: ${{ env.update_chart }}
 
   build:
     needs: check
