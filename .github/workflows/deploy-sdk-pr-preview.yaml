@@ -103,7 +103,7 @@ jobs:
           ref: master
       - id: skip
         run: |
-          pwd && echo "::set-output name=version::$(yq '.version' ../deploy/charts/infrastructure/Chart.yaml)"
+          ls .. && echo "::set-output name=version::$(yq '.version' ../deploy/charts/infrastructure/Chart.yaml)"
 
       - name: Package and upload the chart
         if: env.update_chart == true
