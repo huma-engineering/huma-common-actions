@@ -48,6 +48,6 @@ runs:
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
         mkdir -p ./.bin
         helm package . -d ./.bin
-        helm push ./.bin/$*-$(yq '.version' ${path}).tgz oci://ghcr.io/huma-engineering/helm-charts
+        helm push ./.bin/$(yq '.name' ${path})-$(yq '.version' ${path}).tgz oci://ghcr.io/huma-engineering/helm-charts
         echo "::set-output name=version::$(yq '.version' ${path})"
       shell: bash
