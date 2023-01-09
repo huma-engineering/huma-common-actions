@@ -88,7 +88,9 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/package-upload-helm-chart
+      - uses: huma-engineering/huma-common-actions/.github/actions/package-upload-helm-chart@HCA-NA-add-huma-server-actions
+        name: Deploy the Helm chart to GKE
+        id: helm
         with:
           head_sha: ${{ needs.check.outputs.head_sha }}
           include_sdk: ${{ inputs.include_sdk }}
