@@ -32,6 +32,9 @@ outputs:
 runs:
   using: composite
   steps:
+    - run: |-
+        echo "${{ inputs.gcp_credentials && 'T' || 'F' }}"
+      shell: bash
     - name: Authenticate to Google Cloud via a Service Account Key JSON
       uses: google-github-actions/auth@v0
       with:
