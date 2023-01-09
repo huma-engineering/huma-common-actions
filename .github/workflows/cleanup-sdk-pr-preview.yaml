@@ -24,7 +24,7 @@ jobs:
     steps:
       - id: helm
         name: Uninstall a Helm chart
-        uses: huma-engineering/huma-github-actions/uninstall-helm-chart@v0.14.0
+        uses: huma-engineering/huma-common-actions/.github/actions/uninstall-helm-chart@HCA-NA-add-huma-server-actions
         with:
           cluster_name: ${{ inputs.cluster_name }}
           location: ${{ inputs.cluster_location }}
