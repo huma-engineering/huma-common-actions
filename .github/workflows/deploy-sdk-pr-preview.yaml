@@ -166,7 +166,7 @@ jobs:
     steps:
       - name: Deploy the Helm chart to GKE
         id: helm
-        uses: huma-engineering/huma-github-actions/deploy-helm-chart-to-gke@v0.19.0
+        uses: huma-engineering/huma-common-actions/.github/actions/deploy-helm-chart-to-gke@HCA-NA-add-huma-server-actions
         with:
           cluster_name: ${{ inputs.cluster_name }}
           location: ${{ inputs.cluster_location }}
@@ -181,7 +181,7 @@ jobs:
           image_repository: ghcr.io/huma-engineering/py-${{ inputs.server_name }}
           # NOTE: an image_tag should be the same as in job.build
           image_tag: ${{ env.app_namespace }}-${{ needs.check.outputs.short_sha }}
-          chart_url: oci://ghcr.io/huma-engineering/helm-charts/huma-${{ inputs.server_name }}
+          chart_url: oci://ghcr.io/huma-engineering/helm-charts/huma-backend-requisites
           version: ${{ needs.chart.outputs.version }}
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

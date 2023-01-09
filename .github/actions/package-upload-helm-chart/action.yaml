@@ -40,10 +40,10 @@ runs:
       env:
         HELM_EXPERIMENTAL_OCI: "1"
         path: ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml
-        tag: "-${{ inputs.short_sha }}"
+        # tag: "-${{ inputs.short_sha }}"
       working-directory: ${{ github.action_path }}/../../deploy/charts/infrastructure/
       run: |
-        yq '.version += strenv(tag)' -i ${path}
+        # yq '.version += strenv(tag)' -i ${path}
         echo ${{ github.token }} |\
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
         mkdir -p ./.bin
