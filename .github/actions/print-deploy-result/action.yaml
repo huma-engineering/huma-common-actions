@@ -17,10 +17,12 @@ inputs:
   db_user: { required: true, description: 'Database username' }
   db_provider: { required: true, description: 'DB provider, e.g: atlas or kubedb' }
   bucket_provider: { required: true, description: 'The bucket provider, e.g: gcs, aws' }
-outputs:
-  version:
-    description: The version of created chart
-    value: ${{ inputs.update_chart == true && steps.update.outputs.version || steps.skip.outputs.version }}
+  db_username: { required: true, description: 'Database username' }
+  db_password: { required: true, description: 'Database password' }
+  mongo_uri: { required: true, description: 'Mongo URI' }
+  dashboard_url: { required: true, description: 'Dashboard url' }
+  bucket: { required: true, description: 'Bucket name' }
+  bucket_region: { required: true, description: 'Region of the bucket' }
 runs:
   using: composite
   steps:
@@ -31,27 +33,27 @@ runs:
         template: ${{ github.action_path }}/pr-preview-comment.tpl
         vars: |-
           server_name: ${{ inputs.server_name}}
-          url: "https://${{ env.app_name }}.${{ inputs.host_postfix }}"
+          url: "https://${{ inputs.app_name }}.${{ inputs.host_postfix }}"
           mongo_express_url: ${{ format('"https://{0}/mongo-express/db/{1}"',
-            env.host_postfix, env.db_user) }}
-          mongo_uri: ${{ env.db_provider == 'kubedb' &&
+            inputs.host_postfix, inputs.db_user) }}
+          mongo_uri: ${{ inputs.db_provider == 'kubedb' &&
             format('"mongodb://{0}:{1}@{2}/{0}"',
-            env.db_user, steps.db_secret.outputs.password, env.host_postfix) ||
-            env.db_provider == 'atlas' && steps.db_secret.outputs.mongo_uri }}
-          username: ${{ steps.db_secret.outputs.username }}
-          password: ${{ steps.db_secret.outputs.password }}
-          bucket_uri: ${{ format('"{0}://{1}"', env.bucket_provider == 'gcs' && 'gs' || 's3',
-            steps.bucket_secret.outputs.bucket) }}
-          console_url: ${{ env.bucket_provider == 'gcs' &&
+            inputs.db_user, inputs.db_password, inputs.host_postfix) ||
+            inputs.db_provider == 'atlas' && inputs.mongo_uri }}
+          username: ${{ inputs.db_username }}
+          password: ${{ inputs.db_password }}
+          bucket_uri: ${{ format('"{0}://{1}"', inputs.bucket_provider == 'gcs' && 'gs' || 's3',
+            inputs.bucket) }}
+          console_url: ${{ inputs.bucket_provider == 'gcs' &&
             format('"[Google Cloud Console URL](https://console.cloud.google.com/storage/browser/{0})"',
-            steps.bucket_secret.outputs.bucket) ||
+            bucket) ||
             format('"[AWS Console URL](https://s3.console.aws.amazon.com/s3/buckets/{0}?region={1})"',
-            steps.bucket_secret.outputs.bucket, steps.bucket_secret.outputs.region) }}
-          dashboard_url: ${{ inputs.grafana_host }}${{ needs.deploy.outputs.dashboard_url }}
-          atlas_warning: ${{ env.db_provider == 'atlas' &&
+            bucket, inputs.bucket_region) }}
+          dashboard_url: ${{ inputs.grafana_host }}${{ inputs.dashboard_url }}
+          atlas_warning: ${{ inputs.db_provider == 'atlas' &&
             format('"- {0} `{1}` project [IP Access List]({2}#security/network/accessList)."',
             '**Note:** for Atlas Mongo Shell your IP should be on the',
             inputs.atlas_project, inputs.atlas_project_url) || '' }}
-          atlas_cp: ${{ env.db_provider == 'atlas' &&
+          atlas_cp: ${{ inputs.db_provider == 'atlas' &&
             format('"<br/>[Atlas Cluster control panel]({0}#clusters/detail/{1})."',
             inputs.atlas_project_url, inputs.atlas_cluster) || '' }}

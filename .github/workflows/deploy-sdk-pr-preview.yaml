@@ -414,6 +414,12 @@ jobs:
           db_user: ${{ env.db_user }}
           db_provider: ${{ env.db_provider }}
           bucket_provider: ${{ env.bucket_provider }}
+          db_username: ${{ steps.db_secret.outputs.username }}
+          db_password: ${{ steps.db_secret.outputs.password }}
+          mongo_uri: ${{ steps.db_secret.outputs.mongo_uri }}
+          dashboard_url: ${{ needs.deploy.outputs.dashboard_url }}
+          bucket: ${{ steps.bucket_secret.outputs.bucket }}
+          bucket_region: ${{ steps.bucket_secret.outputs.region }}
 
       - name: Put a ready to use comment
         uses: peter-evans/create-or-update-comment@v2
