@@ -10,7 +10,6 @@ inputs:
   sdk_ssh_key: { required: false, description: 'SSH key to fetch sdk project' }
   short_sha: { required: true, description: 'Short SHA' }
   update_chart: { required: true, description: 'Whether update the chart or not' }
-  make_upload_chart_command: { required: true, description: 'The command in makefile to upload the chart' }
 outputs:
   version:
     description: The version of created chart
@@ -51,6 +50,8 @@ runs:
         yq '.version += strenv(tag)' -i ${path}
         echo ${{ github.token }} |\
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
-        make ${{ inputs.make_upload_chart_command }}
+        mkdir -p ./.bin
+        helm package . -d ./.bin
+        helm push ./.bin/$*-$(yq '.version' ${path}).tgz oci://ghcr.io/huma-engineering/helm-charts
         echo "::set-output name=version::$(yq '.version' ${path})"
       shell: bash
