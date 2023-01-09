@@ -16,8 +16,10 @@ jobs:
   uninstall:
     name: Uninstall a Helm chart
     if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
-      startsWith(github.event.comment.body, '/destroy')) || github.event.action == 'closed' &&
-      contains(github.event.pull_request.labels.*.name, 'deployed') }}
+      startsWith(github.event.comment.body, '/destroy')) }}
+    # if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
+    #   startsWith(github.event.comment.body, '/destroy')) || github.event.action == 'closed' &&
+    #   contains(github.event.pull_request.labels.*.name, 'deployed') }}
     runs-on: ubuntu-latest
     steps:
       - id: helm
