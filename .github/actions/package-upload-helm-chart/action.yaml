@@ -32,7 +32,7 @@ runs:
     - name: 'Get chart version'
       id: skip
       run: |
-        echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml)"
+        echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml)"
       shell: bash
 
     - name: Package and upload the chart
