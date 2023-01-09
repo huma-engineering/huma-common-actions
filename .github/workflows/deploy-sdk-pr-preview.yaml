@@ -87,6 +87,8 @@ jobs:
     name: Package and upload the Helm chart
     needs: check
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.helm.outputs.version }}
     steps:
       - uses: huma-engineering/huma-common-actions/.github/actions/package-upload-helm-chart@HCA-NA-add-huma-server-actions
         name: Deploy the Helm chart to GKE

@@ -1,0 +1,132 @@
+name: Deploy a Helm chart to GKE
+description: Deploy a Helm chart to GKE
+author: Denis Trofimov denis.trofimov@huma.com
+# ref: https://docs.github.com/en/actions/deployment/deploying-to-your-cloud-provider/
+branding:
+  color: "purple"
+  icon: "upload-cloud"
+
+inputs:
+  app_name:
+    description: Application Deployment name
+    required: true
+  atlas_cluster:
+    description: Atlas MongoDB Cluster name
+    required: false
+  atlas_project:
+    description: Atlas Project name
+    required: false
+  app_namespace:
+    description: Application namespace
+    required: true
+  bucket_provider:
+    description: Object Storage provider
+    required: true
+  chart_url:
+    description: Chart URL
+    required: true
+  clean_workload:
+    description: Delete all workload of compose-operator kind, but not resources
+    default: "false"
+    required: false
+  cluster_name:
+    description: GKE cluster name
+    required: true
+  db_provider:
+    description: MongoDB Cluster provider
+    required: true
+  gcp_credentials:
+    description: GCP Service Account Key to deploy workload
+    required: true
+  github_token:
+    description: A Github token PAT
+    required: true
+  image_repository:
+    description: Image repository
+    required: true
+  image_tag:
+    description: Image tag
+    default: latest
+    required: false
+  kubedb_namespace:
+    description: KubeDB MongoDB Cluster Namespace
+    required: false
+  kubedb_cluster:
+    description: KubeDB MongoDB Cluster name
+    required: false
+  location:
+    description: GKE zone
+    required: true
+  version:
+    description: Chart version
+    required: true
+outputs:
+  error:
+    description: action's exit code
+    value: ${{ inputs.db_provider == 'kubedb' && steps.helm_kubedb.outputs.error ||
+      inputs.db_provider == 'atlas' && steps.helm_atlas.outputs.error }}
+runs:
+  using: composite
+  steps:
+    - name: Authenticate to Google Cloud via a Service Account Key JSON
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ inputs.gcp_credentials }}
+
+    - name: Get the GKE credentials
+      uses: google-github-actions/get-gke-credentials@v0
+      with:
+        cluster_name: ${{ inputs.cluster_name }}
+        location: ${{ inputs.location }}
+
+    - name: Delete all workload of compose-operator kind, but not resources
+      if: inputs.clean_workload == 'true'
+      run: |-
+        kubectl delete applicationcomposition --all=true -n ${{ inputs.app_namespace }}
+        kubectl delete application --all=true -n ${{ inputs.app_namespace }}
+      shell: bash
+
+    # ref: https://helm.sh/docs/topics/registries/
+    - name: Deploy a Helm chart
+      id: helm_kubedb
+      if: inputs.db_provider == 'kubedb'
+      env:
+        HELM_EXPERIMENTAL_OCI: "1"
+      run: |-
+        echo ${{ inputs.github_token }} |\
+          helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
+          -i --create-namespace -n ${{ inputs.app_namespace }} \
+          --version ${{ inputs.version }} \
+          --set sdk.image=${{ inputs.image_repository }} \
+          --set sdk.tag=${{ inputs.image_tag }} \
+          --set fullnameOverride=${{ inputs.app_name }} \
+          --set mongodb.kubedb.clusterRef.name=${{ inputs.kubedb_cluster }} \
+          --set mongodb.kubedb.clusterRef.namespace=${{ inputs.kubedb_namespace }} \
+          --set mongodb.provider=${{ inputs.db_provider }} \
+          --set bucket.provider=${{ inputs.bucket_provider }} \
+          && error=0 || error=$?
+        echo "::set-output name=error::$error"
+      shell: bash
+
+    - name: Deploy a Helm chart
+      id: helm_atlas
+      if: inputs.db_provider == 'atlas'
+      env:
+        HELM_EXPERIMENTAL_OCI: "1"
+      run: |-
+        echo ${{ inputs.github_token }} |\
+          helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
+          -i --create-namespace -n ${{ inputs.app_namespace }} \
+          --version ${{ inputs.version }} \
+          --set sdk.image=${{ inputs.image_repository }} \
+          --set sdk.tag=${{ inputs.image_tag }} \
+          --set fullnameOverride=${{ inputs.app_name }} \
+          --set mongodb.atlas.clusterName=${{ inputs.atlas_cluster }} \
+          --set mongodb.atlas.projectName=${{ inputs.atlas_project }} \
+          --set mongodb.provider=${{ inputs.db_provider }} \
+          --set bucket.provider=${{ inputs.bucket_provider }} \
+          && error=0 || error=$?
+        echo "::set-output name=error::$error"
+      shell: bash
