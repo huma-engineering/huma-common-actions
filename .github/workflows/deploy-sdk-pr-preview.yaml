@@ -54,8 +54,6 @@ jobs:
       head_sha: ${{ steps.comment-branch.outputs.head_sha }}
       short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
-      - run: |-
-          echo "update chart: ${{ env.update_chart }}"
       - uses: xt0rted/pull-request-comment-branch@v1
         id: comment-branch
 
