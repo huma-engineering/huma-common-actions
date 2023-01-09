@@ -22,6 +22,7 @@ jobs:
     #   contains(github.event.pull_request.labels.*.name, 'deployed') }}
     runs-on: ubuntu-latest
     steps:
+      - run: echo "${{ secrets.GKE_SA_KEY && 'T' || 'F' }}"
       - id: helm
         name: Uninstall a Helm chart
         uses: huma-engineering/huma-common-actions/.github/actions/uninstall-helm-chart@HCA-NA-add-huma-server-actions
