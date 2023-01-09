@@ -398,37 +398,22 @@ jobs:
           path: libs/huma-server-sdk
           ref: master
 
-      - name: Render pr-preview-comment template
-        id: template
-        uses: chuhlomin/render-template@v1.6
+      - name: Print the urls in a comment
+        id: helm
+        uses: huma-engineering/huma-common-actions/.github/actions/print-deploy-result@HCA-NA-add-huma-server-actions
         with:
-          template: .github/workflows/pr-preview-comment.tpl
-          vars: |-
-            server_name: ${{ inputs.server_name}}
-            url: "https://${{ env.app_name }}.${{ inputs.host_postfix }}"
-            mongo_express_url: ${{ format('"https://{0}/mongo-express/db/{1}"',
-              env.host_postfix, env.db_user) }}
-            mongo_uri: ${{ env.db_provider == 'kubedb' &&
-              format('"mongodb://{0}:{1}@{2}/{0}"',
-              env.db_user, steps.db_secret.outputs.password, env.host_postfix) ||
-              env.db_provider == 'atlas' && steps.db_secret.outputs.mongo_uri }}
-            username: ${{ steps.db_secret.outputs.username }}
-            password: ${{ steps.db_secret.outputs.password }}
-            bucket_uri: ${{ format('"{0}://{1}"', env.bucket_provider == 'gcs' && 'gs' || 's3',
-              steps.bucket_secret.outputs.bucket) }}
-            console_url: ${{ env.bucket_provider == 'gcs' &&
-              format('"[Google Cloud Console URL](https://console.cloud.google.com/storage/browser/{0})"',
-              steps.bucket_secret.outputs.bucket) ||
-              format('"[AWS Console URL](https://s3.console.aws.amazon.com/s3/buckets/{0}?region={1})"',
-              steps.bucket_secret.outputs.bucket, steps.bucket_secret.outputs.region) }}
-            dashboard_url: ${{ inputs.grafana_host }}${{ needs.deploy.outputs.dashboard_url }}
-            atlas_warning: ${{ env.db_provider == 'atlas' &&
-              format('"- {0} `{1}` project [IP Access List]({2}#security/network/accessList)."',
-              '**Note:** for Atlas Mongo Shell your IP should be on the',
-              inputs.atlas_project, inputs.atlas_project_url) || '' }}
-            atlas_cp: ${{ env.db_provider == 'atlas' &&
-              format('"<br/>[Atlas Cluster control panel]({0}#clusters/detail/{1})."',
-              inputs.atlas_project_url, inputs.atlas_cluster) || '' }}
+          update_chart: ${{ inputs.update_chart }}
+          server_name: ${{ inputs.server_name }}
+          host_prefix: ${{ inputs.host_prefix }}
+          grafana_host: ${{ inputs.grafana_host }}
+          atlas_project_url: ${{ inputs.atlas_project_url }}
+          atlas_project: ${{ inputs.atlas_project }}
+          atlas_cluster: ${{ inputs.atlas_cluster }}
+          app_name: ${{ env.app_name }}
+          host_postfix: ${{ env.host_postfix }}
+          db_user: ${{ env.db_user }}
+          db_provider: ${{ env.db_provider }}
+          bucket_provider: ${{ env.bucket_provider }}
 
       - name: Put a ready to use comment
         uses: peter-evans/create-or-update-comment@v2
