@@ -35,8 +35,13 @@ runs:
         echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml)"
       shell: bash
 
+    - name: test
+      run: |-
+        echo "update chart: ${{ inputs.update_chart && 'T' || 'F' }}"
+      shell: bash
+
     - name: Package and upload the chart
-      # if: inputs.update_chart == true
+      if: inputs.update_chart == true
       id: update
       env:
         HELM_EXPERIMENTAL_OCI: "1"
