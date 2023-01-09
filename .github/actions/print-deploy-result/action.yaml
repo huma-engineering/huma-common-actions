@@ -16,12 +16,12 @@ inputs:
   host_postfix: { required: true, description: 'The host prefix for mongo' }
   db_user: { required: true, description: 'Database username' }
   db_provider: { required: true, description: 'DB provider, e.g: atlas or kubedb' }
-  bucket_provider: { required: true, description: 'The bucket provider, e.g: gcs, aws' }
   db_username: { required: true, description: 'Database username' }
   db_password: { required: true, description: 'Database password' }
   mongo_uri: { required: true, description: 'Mongo URI' }
   dashboard_url: { required: true, description: 'Dashboard url' }
   bucket: { required: true, description: 'Bucket name' }
+  bucket_provider: { required: true, description: 'The bucket provider, e.g: gcs, aws' }
   bucket_region: { required: true, description: 'Region of the bucket' }
 runs:
   using: composite
@@ -46,9 +46,9 @@ runs:
             inputs.bucket) }}
           console_url: ${{ inputs.bucket_provider == 'gcs' &&
             format('"[Google Cloud Console URL](https://console.cloud.google.com/storage/browser/{0})"',
-            bucket) ||
+            inputs.bucket) ||
             format('"[AWS Console URL](https://s3.console.aws.amazon.com/s3/buckets/{0}?region={1})"',
-            bucket, inputs.bucket_region) }}
+            inputs.bucket, inputs.bucket_region) }}
           dashboard_url: ${{ inputs.grafana_host }}${{ inputs.dashboard_url }}
           atlas_warning: ${{ inputs.db_provider == 'atlas' &&
             format('"- {0} `{1}` project [IP Access List]({2}#security/network/accessList)."',
