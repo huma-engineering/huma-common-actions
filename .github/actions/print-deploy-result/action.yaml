@@ -26,11 +26,9 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: copy file
-      uses: canastro/copy-file-action@master
-      with:
-        source: ${{ github.action_path }}/pr-preview-comment.tpl
-        target: ./pr-preview-comment-copy.tpl
+    - name: Copy template file
+      shell: bash
+      run: cat ${{ github.action_path }}/pr-preview-comment.tpl >> ./pr-preview-comment-copy.tpl
     - name: Render pr-preview-comment template
       id: template
       uses: chuhlomin/render-template@v1.6
@@ -62,7 +60,6 @@ runs:
           atlas_cp: ${{ inputs.db_provider == 'atlas' &&
             format('"<br/>[Atlas Cluster control panel]({0}#clusters/detail/{1})."',
             inputs.atlas_project_url, inputs.atlas_cluster) || '' }}
-    - name: Remove File
-      uses: JesseTG/rm@v1.0.3
-      with:
-        path: ./pr-preview-comment-copy.tpl
+    - name: Delete template file
+      shell: bash
+      run: rm ./pr-preview-comment-copy.tpl
