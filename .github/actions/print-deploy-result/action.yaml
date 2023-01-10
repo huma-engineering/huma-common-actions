@@ -2,7 +2,7 @@ name: Prints the deployment result
 description: Prints the deployment result including all the web/server/db urls
 author: Mohammad Asghari mohammad.asghari@huma.com
 branding:
-  color: 'blue'
+  color: 'green'
   icon: 'package'
 inputs:
   update_chart: { required: true, description: 'Update chart flag' }
@@ -26,6 +26,9 @@ inputs:
 runs:
   using: composite
   steps:
+    - run: |-
+        cat ${{ github.action_path }}/pr-preview-comment.tpl
+      shell: bash
     - name: Render pr-preview-comment template
       id: template
       uses: chuhlomin/render-template@v1.6
