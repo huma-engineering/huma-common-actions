@@ -399,7 +399,7 @@ jobs:
           ref: master
 
       - name: Print the urls in a comment
-        id: helm
+        id: template
         uses: huma-engineering/huma-common-actions/.github/actions/print-deploy-result@HCA-NA-add-huma-server-actions
         with:
           update_chart: ${{ inputs.update_chart }}

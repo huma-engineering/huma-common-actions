@@ -23,6 +23,10 @@ inputs:
   bucket: { required: true, description: 'Bucket name' }
   bucket_provider: { required: true, description: 'The bucket provider, e.g: gcs, aws' }
   bucket_region: { required: true, description: 'Region of the bucket' }
+outputs:
+  result:
+    description: The output text
+    value: ${{ steps.template.outputs.result }}
 runs:
   using: composite
   steps:
