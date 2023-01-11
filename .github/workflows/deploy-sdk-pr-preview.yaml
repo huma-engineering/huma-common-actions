@@ -64,21 +64,21 @@ jobs:
     name: Check if this flow must be run at all or not
     runs-on: ubuntu-latest
     outputs:
-      is_deploy: ${{ steps.check.outputs.is_deploy == 'true' }}
-      is_rebuild: ${{ steps.check.outputs.is_rebuild == 'true' }}
-      must_build: ${{ steps.check.outputs.must_build == 'true' }}
+      is_deploy: ${{ steps.check.outputs.is_deploy }}
+      is_rebuild: ${{ steps.check.outputs.is_rebuild }}
+      must_build: ${{ steps.check.outputs.must_build }}
     steps:
       - id: check
         run: |-
-          echo "::set-output name=is_deploy::${{ startsWith(github.event.comment.body, '/deploy') }}"
-          echo "::set-output name=is_rebuild::${{ startsWith(github.event.comment.body, '/rebuild') }}"
+          echo "::set-output name=is_deploy::${{ toJSON(startsWith(github.event.comment.body, '/deploy')) }}"
+          echo "::set-output name=is_rebuild::${{ toJSON(startsWith(github.event.comment.body, '/rebuild')) }}"
           echo "::set-output name=must_build::${{ env.must_build }}"
   check:
     needs: task
     name: Deploy command received
     if: ${{ github.event.issue.pull_request
       && github.event.issue.state == 'open'
-      && (needs.task.outputs.is_deploy || needs.task.outputs.is_rebuild) }}
+      && (fromJSON(needs.task.outputs.is_deploy) || fromJSON(needs.task.outputs.is_rebuild)) }}
     runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
@@ -101,7 +101,7 @@ jobs:
           reactions: eyes
 
       - name: Describe the command to perform
-        if: needs.task.outputs.is_deploy
+        if: fromJSON(needs.task.outputs.is_deploy)
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ env.issue_number }}
@@ -116,7 +116,7 @@ jobs:
               github.server_url, github.repository, github.run_id) }})
 
       - name: create a comment before exit
-        if: needs.task.outputs.is_rebuild && !contains(github.event.issue.labels.*.name, 'deployed')
+        if: fromJSON(needs.task.outputs.is_rebuild) && !contains(github.event.issue.labels.*.name, 'deployed')
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -125,7 +125,7 @@ jobs:
             Please use a `/deploy` command first to create one.💡
 
   chart:
-    if: needs.task.outputs.is_deploy || needs.task.outputs.is_rebuild
+    if: fromJSON(needs.task.outputs.is_deploy) || fromJSON(needs.task.outputs.is_rebuild)
     name: Package and upload the Helm chart
     needs:
       - check
@@ -149,7 +149,7 @@ jobs:
     needs:
      - check
      - task
-    if: needs.task.outputs.must_build
+    if: fromJSON(needs.task.outputs.must_build)
     name: Build and Push Container
     runs-on: ubuntu-latest
     steps:
@@ -199,7 +199,7 @@ jobs:
       - check
       - chart
       - task
-    if: needs.task.outputs.must_build
+    if: fromJSON(needs.task.outputs.must_build)
     runs-on: ubuntu-latest
     outputs:
       dashboard_url: ${{ steps.dashboard.outputs.url }}
@@ -235,7 +235,7 @@ jobs:
 
       - name: Create Grafana logs dashboard
         id: dashboard
-        if: needs.task.outputs.is_deploy && steps.helm.outputs.error == 0
+        if: fromJSON(needs.task.outputs.is_deploy) && steps.helm.outputs.error == 0
         uses: huma-engineering/huma-github-actions/create-grafana-logs-dashboard@v0.14.0
         with:
           app_name: ${{ env.app_name }}
@@ -274,7 +274,7 @@ jobs:
     needs:
      - deploy
      - task
-    if: needs.task.outputs.is_deploy
+    if: fromJSON(needs.task.outputs.is_deploy)
     runs-on: ubuntu-latest
     outputs:
       error: ${{ steps.restore.outputs.error }}
@@ -319,7 +319,7 @@ jobs:
     needs:
      - deploy
      - task
-    if: needs.task.outputs.is_deploy
+    if: fromJSON(needs.task.outputs.is_deploy)
     outputs:
       error: ${{ env.bucket_provider == 'gcs' && steps.sync_gcs.outputs.error || steps.sync_s3.outputs.error }}
     runs-on: ubuntu-latest
@@ -392,7 +392,7 @@ jobs:
       - task
       - check
       - deploy
-    if: ${{ needs.task.outputs.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
+    if: ${{ fromJSON(needs.task.outputs.is_deploy) && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
       needs.copy-bucket.outputs.error == 0 }}
     runs-on: ubuntu-latest
     steps:
