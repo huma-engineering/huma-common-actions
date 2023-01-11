@@ -39,14 +39,14 @@ env:
       contains(github.event.issue.labels.*.name, 'deployed')) }}
   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
   app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
-  bucket_provider: ${{ (
-    startsWith(github.event.comment.body, '/deploy') &&
-      (contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3') ||
+  bucket_provider: ${{
+    (startsWith(github.event.comment.body, '/deploy') &&
+      (contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3')) ||
     (startsWith(github.event.comment.body, '/rebuild') &&
       (contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3')) }}
-  db_provider: ${{ (
-    startsWith(github.event.comment.body, '/deploy') &&
-      (contains(github.event.comment.body, '--mongodb=atlas') && 'atlas' || 'kubedb') ||
+  db_provider: ${{
+    (startsWith(github.event.comment.body, '/deploy') &&
+      (contains(github.event.comment.body, '--mongodb=atlas') && 'atlas' || 'kubedb')) ||
     (startsWith(github.event.comment.body, '/rebuild') &&
       (contains(github.event.issue.labels.*.name, 'deployed_atlas_mongodb') && 'atlas' || 'kubedb')) }}
   db_user: ${{ inputs.server_name }}-${{ github.event.issue.number }}-db
