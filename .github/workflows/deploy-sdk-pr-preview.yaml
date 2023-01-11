@@ -76,7 +76,7 @@ jobs:
     name: Deploy command received
     if: ${{ github.event.issue.pull_request
       && github.event.issue.state == 'open'
-      && (needs.task.output.is_deploy || needs.task.output.is_rebuild)) }}
+      && (needs.task.output.is_deploy || needs.task.output.is_rebuild) }}
     runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
