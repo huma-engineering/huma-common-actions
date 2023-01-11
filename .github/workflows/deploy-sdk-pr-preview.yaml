@@ -31,8 +31,6 @@ on:
       server_extra_config_file: { required: true, type: string }
 
 env:
-  is_deploy: ${{ startsWith(github.event.comment.body, '/deploy') }}
-  is_rebuild: ${{ startsWith(github.event.comment.body, '/rebuild') }}
   must_build: ${{
     startsWith(github.event.comment.body, '/deploy') ||
     (startsWith(github.event.comment.body, '/rebuild') &&
@@ -62,11 +60,23 @@ env:
   helm_chart_path: ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml
 
 jobs:
+  task:
+    name: Check if this flow must be run at all or not
+    runs-on: ubuntu-latest
+    outputs:
+      is_deploy: ${{ steps.check.outputs.is_deploy }}
+      is_rebuild: ${{ steps.check.outputs.is_rebuild }}
+    steps:
+      - id: check
+        run: |-
+          echo "::set-output name=is_deploy::${{ startsWith(github.event.comment.body, '/deploy') }}"
+          echo "::set-output name=is_rebuild::${{ startsWith(github.event.comment.body, '/rebuild') }}"
   check:
+    needs: task
     name: Deploy command received
     if: ${{ github.event.issue.pull_request
       && github.event.issue.state == 'open'
-      && (env.is_deploy || env.is_rebuild)) }}
+      && (needs.task.output.is_deploy || needs.task.output.is_rebuild)) }}
     runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
@@ -113,6 +123,7 @@ jobs:
             Please use a `/deploy` command first to create one.💡
 
   chart:
+    if: env.is_deploy || env.is_rebuild
     name: Package and upload the Helm chart
     needs: check
     runs-on: ubuntu-latest
@@ -369,7 +380,6 @@ jobs:
       - copy-bucket
       - check
       - deploy
-      # - backend
     if: ${{ env.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
       needs.copy-bucket.outputs.error == 0 }}
     runs-on: ubuntu-latest
