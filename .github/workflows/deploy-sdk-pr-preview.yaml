@@ -33,11 +33,9 @@ on:
 env:
   is_deploy: ${{ startsWith(github.event.comment.body, '/deploy') }}
   is_rebuild: ${{ startsWith(github.event.comment.body, '/rebuild') }}
-  testest1: ${{ env.is_deploy }}
-  testest2: ${{ env.is_rebuild }}
   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
   app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
-  bucket_provider: ${{ contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3' }}
+  bucket_provider: ${{ (startsWith(github.event.comment.body, '/deploy') && (contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3') || (startsWith(github.event.comment.body, '/rebuild') && (contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3')) }}
   db_provider: ${{ contains(github.event.comment.body, '--mongodb=atlas') && 'atlas' || 'kubedb' }}
   db_user: ${{ inputs.server_name }}-${{ github.event.issue.number }}-db
   full_db_dump_prefix: ${{ contains(github.event.comment.body, '--db-full') && 'full_' || '' }}
@@ -63,7 +61,6 @@ jobs:
       head_sha: ${{ steps.comment-branch.outputs.head_sha }}
       short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
-      - run: "echo 'tt1: ${{ env.testtest1 }}, tt2: ${{ env.testtest2 }}'"
       - uses: xt0rted/pull-request-comment-branch@v1
         id: comment-branch
 
