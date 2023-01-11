@@ -95,6 +95,12 @@ runs:
         kubectl delete application --all=true -n ${{ inputs.app_namespace }}
       shell: bash
 
+    - run: pwd
+      shell: bash
+
+    - run: ls .github/workflows/
+      shell: bash
+
     - name: Merge config-base.yaml and input.server_extra_config_file
       run: |-
         yq eval-all '. as $item ireduce ({}; . * $item)' \
