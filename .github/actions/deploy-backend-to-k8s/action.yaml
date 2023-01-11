@@ -31,6 +31,8 @@ runs:
   using: composite
   steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.short_sha }}
       - name: Get short SHA
         run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
         shell: bash

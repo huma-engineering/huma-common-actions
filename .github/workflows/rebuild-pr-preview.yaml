@@ -5,6 +5,7 @@ on:
     inputs:
       server_name: { required: true, type: string }
       include_sdk: { required: true, type: boolean }
+      sdk_ref: { required: false, type: string }
       cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
       cluster_location: { required: false, type: string, default: 'europe-west2' }
       atlas_cluster: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview' }
@@ -74,7 +75,7 @@ jobs:
           ssh-key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
           repository: huma-engineering/huma-server-sdk
           path: libs/huma-server-sdk
-          ref: master
+          ref: ${{ inputs.sdk_ref }}
       - id: skip
         run: |
           echo "::set-output name=version::$(yq '.version' ${{ inputs.helm_chart_path }})"

@@ -7,6 +7,7 @@ branding:
 inputs:
   head_sha: { required: true, description: 'Commit SHA' }
   include_sdk: { required: true, description: 'False for dct, rpm, etc. True for sdk' }
+  sdk_ref: { required: false, description: string }
   sdk_ssh_key: { required: false, description: 'SSH key to fetch sdk project' }
   short_sha: { required: true, description: 'Short SHA' }
   update_chart: { required: true, description: 'Whether update the chart or not' }
@@ -27,7 +28,7 @@ runs:
         ssh-key: ${{ inputs.sdk_ssh_key }}
         repository: huma-engineering/huma-server-sdk
         path: libs/huma-server-sdk
-        ref: master
+        ref: ${{ inputs.sdk_ref }}
     - name: 'Get chart version'
       id: skip
       run: |
