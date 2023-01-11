@@ -1,6 +1,6 @@
 name: Deploy a Helm chart to GKE
 description: Deploy a Helm chart to GKE
-author: Denis Trofimov denis.trofimov@huma.com
+author: Denis Trofimov denis.trofimov@huma.com, Mohammad Asghari mohammad.asghari@huma.com
 # ref: https://docs.github.com/en/actions/deployment/deploying-to-your-cloud-provider/
 branding:
   color: "purple"
@@ -60,6 +60,15 @@ inputs:
   version:
     description: Chart version
     required: true
+  helm_extra_values_file:
+    description: Custom values file
+    required: true
+  server_extra_config_file:
+    description: Extra server config
+    required: true
+  py_path_in_docker:
+    description: The python execution path inside docker, e.g. /apps/dct_server.py
+    required: true
 outputs:
   error:
     description: action's exit code
@@ -86,6 +95,12 @@ runs:
         kubectl delete application --all=true -n ${{ inputs.app_namespace }}
       shell: bash
 
+    - name: Merge config-base.yaml and input.server_extra_config_file
+      run: |-
+        yq eval-all '. as $item ireduce ({}; . * $item)' \
+          ${{ github.action_path }}/../../deploy/charts/infrastructure/config-base.yaml \
+          ${{ inputs.server_extra_config_file }} >> config.yaml
+      shell: bash
     # ref: https://helm.sh/docs/topics/registries/
     - name: Deploy a Helm chart
       id: helm_kubedb
@@ -97,9 +112,11 @@ runs:
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
         helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
           -i --create-namespace -n ${{ inputs.app_namespace }} \
+          -f ${{ inputs.helm_extra_values_file }} \
           --version ${{ inputs.version }} \
-          --set sdk.image=${{ inputs.image_repository }} \
-          --set sdk.tag=${{ inputs.image_tag }} \
+          --set server.py_path_in_docker=${{ inputs.py_path_in_docker }}
+          --set server.image=${{ inputs.image_repository }} \
+          --set server.tag=${{ inputs.image_tag }} \
           --set fullnameOverride=${{ inputs.app_name }} \
           --set mongodb.kubedb.clusterRef.name=${{ inputs.kubedb_cluster }} \
           --set mongodb.kubedb.clusterRef.namespace=${{ inputs.kubedb_namespace }} \
@@ -119,9 +136,11 @@ runs:
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
         helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
           -i --create-namespace -n ${{ inputs.app_namespace }} \
+          -f ${{ inputs.helm_extra_values_file }} \
           --version ${{ inputs.version }} \
-          --set sdk.image=${{ inputs.image_repository }} \
-          --set sdk.tag=${{ inputs.image_tag }} \
+          --set server.py_path_in_docker=${{ inputs.py_path_in_docker }}
+          --set server.image=${{ inputs.image_repository }} \
+          --set server.tag=${{ inputs.image_tag }} \
           --set fullnameOverride=${{ inputs.app_name }} \
           --set mongodb.atlas.clusterName=${{ inputs.atlas_cluster }} \
           --set mongodb.atlas.projectName=${{ inputs.atlas_project }} \

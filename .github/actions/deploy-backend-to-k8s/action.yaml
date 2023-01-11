@@ -1,0 +1,132 @@
+name: Deploy backend's helmfile to k8s cluster
+description: Deploy backend's helmfile to k8s cluster
+author: Mohamamd Asghari mohammad.asghari@huma.com
+branding:
+  color: "purple"
+  icon: "upload-cloud"
+
+inputs:
+  value_file: { description: Url of the value file, required: true, default: deploy/helmfile/values/gcp/values.gcp-uk-qa.yaml }
+  short_sha: { description: Git's short SHA, required: true }
+  connect_vpn: { description: Boolean to show if we need VPN before deploy or not, required: true }
+  environment: { description: The display name of environment }
+  kube_type: { description: '`GKE` for GKE key, `kube` for kube config file', required: true }
+  kubeconfig: { description: The kubeconfig content if kube_type == 'kube', required: false }
+  gke_key: { description: The GKE_SA_KEY if kube_type == 'GKE', required: false }
+  gke_cluster_name: { description: The cluster name if kube_type == 'GKE', required: false }
+  gke_cluster_location: { description: The cluster location if kube_type == 'GKE', required: false }
+  helmfile_environment: { description: 'Environment (-e) of the helm file', required: true }
+  fill_placeholders: { description: 'Set true to replace domain, database, bucket, etc. info in the values', required: true }
+  placeholder_namespace: { description: 'K8s namespace to be replaced', required: false }
+  placeholder_api: { description: 'Api domain to be replaced', required: false }
+  placeholder_web: { description: 'Website domain to be replaced', required: false }
+  placeholder_db_name: { description: 'Database name to be replaced', required: false }
+  placeholder_gcp_bucket: { description: 'GCP bucket to be replaced', required: false }
+outputs:
+  error:
+    description: action's exit code
+    value: ${{ steps.helm.outputs.error }}
+
+runs:
+  using: composite
+  steps:
+      - uses: actions/checkout@v3
+      - name: Get short SHA
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        shell: bash
+      - name: Set current commit SHA as image tag
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: ${{ inputs.value_file }}
+          propertyPath: "image.tag"
+          value: ${{ inputs.short_sha }}
+          commitChange: false
+          updateFile: true
+      - name: Connect to VPN
+        if: ${{ inputs.connect_vpn }}
+        uses: huma-engineering/huma-common-actions/openvpn-p81@v1.1.0
+        with:
+          configfile-url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/4rBJPOPWVX/openvpn-config/download
+          username: ${{ secrets.VPN_USERNAME }}
+          password: ${{ secrets.VPN_PASSWORD }}
+      - run: |-
+          echo "Github actor: ${{ github.actor }}"
+          echo "Github token: ${{ secrets.GITHUB_TOKEN && 'T' || 'F' }}"
+        shell: bash
+      - name: Login to ghcr
+        run: helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+
+      # Replace placeholders
+      - name: Find and replace namespace
+        if: ${{ inputs.fill_placeholders }}
+        uses: jacobtomlinson/gha-find-replace@v2
+        with: { include: "deploy/helmfile/**", find: "GA-K8S-NAMESPACE", replace: '${{ inputs.placeholder_namespace }}', regex: false }
+      - name: Find and replace API address
+        if: ${{ inputs.fill_placeholders }}
+        uses: jacobtomlinson/gha-find-replace@v2
+        with: { include: "deploy/helmfile/**", find: "GA-API-DOMAIN", replace: '${{ inputs.placeholder_api }}', regex: false }
+      - name: Find and replace web address
+        if: ${{ inputs.fill_placeholders }}
+        uses: jacobtomlinson/gha-find-replace@v2
+        with: { include: "deploy/helmfile/**", find: "GA-WEB-DOMAIN", replace: '${{ inputs.placeholder_web }}', regex: false }
+      - name: Find and replace db name
+        if: ${{ inputs.fill_placeholders }}
+        uses: jacobtomlinson/gha-find-replace@v2
+        with: { include: "deploy/helmfile/**", find: "GA-DB-NAME", replace: '${{ inputs.placeholder_db_name }}', regex: false }
+      - name: Find and replace GCP bucket
+        if: ${{ inputs.fill_placeholders }}
+        uses: jacobtomlinson/gha-find-replace@v2
+        with: { include: "deploy/helmfile/**", find: "GA-GCP-BUCKET", replace: '${{ inputs.placeholder_gcp_bucket }}', regex: false }
+
+      #  Apply with GKE key to sandbox
+      - name: Authenticate to Google Cloud via a Service Account Key JSON
+        if: ${{ inputs.kube_type == 'GKE' }}
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GKE_SA_KEY }}
+
+      - name: Get the GKE credentials
+        if: ${{ inputs.kube_type == 'GKE' }}
+        uses: google-github-actions/get-gke-credentials@v0
+        with:
+          cluster_name: ${{ inputs.cluster_name }}
+          location: ${{ inputs.cluster_location }}
+
+      - name: Setup helmfile
+        uses: mamezou-tech/setup-helmfile@v1.0.0
+        with:
+          install-kubectl: no
+          install-helm: no
+
+      - name: Helmfile apply
+        id: helm
+        shell: bash
+        run: |
+          cd deploy/helmfile && helmfile -e ${{ inputs.helmfile_environment }} apply \
+            && error=0 || error=$?
+          echo "::set-output name=error::$error"
+
+      # Apply with kubeconfig to dev/qa/prod
+      - name: Create kube config file
+        if: ${{ inputs.kube_type == 'kube' }}
+        run: |
+          echo "${{ inputs.kubeconfig }}" | base64 --decode > /tmp/config
+        shell: bash
+
+      - name: Create diff (${{ inputs.environment }})
+        if: ${{ inputs.kube_type == 'kube' }}
+        id: devdiffid
+        uses: huma-engineering/huma-common-actions/helmfile-pr-diff@v1.1.0
+        with:
+          kubeconfig: /tmp/config
+          helmfile-folder: deploy/helmfile
+          helmfile-environment: ${{ inputs.helmfile_environment }}
+      - name: Apply helmfile (${{ inputs.environment }})
+        if: ${{ inputs.kube_type == 'kube' }}
+        uses: huma-engineering/huma-common-actions/helmfile-apply@v1.1.0
+        with:
+          kubeconfig: /tmp/config
+          helmfile-folder: deploy/helmfile
+          helmfile-environment: ${{ inputs.helmfile_environment }}
+          comment-id: ${{ steps.devdiffid.outputs.comment-id }}

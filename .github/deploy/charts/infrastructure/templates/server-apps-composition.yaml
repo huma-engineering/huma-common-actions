@@ -1,0 +1,192 @@
+{{- $name := include "server.fullname" $ -}}
+apiVersion: operator.huma.com/v1alpha1
+kind: ApplicationComposition
+metadata:
+  labels: {{ include "server.labels" $ | nindent 4 }}
+  name: server
+  namespace: {{ .Release.Namespace }}
+spec:
+  commonSpec:
+    env:
+      - name: MP_HOST_URL
+        value: {{ $name }}.sbx.huma.com
+      - name: MP_WEB_APP_URL
+        value: {{ $name }}.sbx.huma.com
+      - name: MP_DEEPLINK_MOBILE_BASE_URL
+        value: https://{{ $name }}.sbx.huma.com
+      - name: MP_MANAGER_WEB_BASE_URL
+        value: https://{{ $name }}.sbx.huma.com
+      - name: MP_DB_NAME
+        value: {{ $name }}-db
+      # links to the secret values for resources reconciled by the operator.huma.com
+      # format is "key@secret"
+      {{- if eq $.Values.mongodb.provider "atlas" }}
+      - name: MP_MONGODB_URL
+        secretValue: privateConnectionString@{{ $name }}-db
+      {{- else if eq $.Values.mongodb.provider "kubedb" }}
+      - name: MP_MONGODB_URL
+        secretValue: connectionString@{{ $name }}-db
+      {{- end }}
+      - name: MP_REDIS_URL
+        secretValue: redis_url@{{ $name }}-rc-secret
+      {{- if eq $.Values.bucket.provider "s3" }}
+      - name: MP_MINIO_ACCESS_KEY
+        secretValue: aws_access_key_id@{{ $name }}-bucket-secret
+      - name: MP_MINIO_SECRET_KEY
+        secretValue: aws_secret_access_key@{{ $name }}-bucket-secret
+      - name: MINIO_REGION
+        secretValue: region@{{ $name }}-bucket-secret
+      - name: MP_MINIO_URL
+        value: s3-eu-west-2.amazonaws.com
+      {{- else if eq $.Values.bucket.provider "gcs" }}
+      - name: MP_GCS_SA_FILE_PATH
+        value: /etc/gcp/credentials.json
+      {{- end }}
+      - name: MP_BUCKET_NAME
+        secretValue: bucket_name@{{ $name }}-bucket-secret
+      # inserting environment variables
+      {{- range $.Values.server.env }}
+      - name: {{ .name }}
+        value: {{ quote .value }}
+      {{- end }}
+      {{- range $.Values.server.extraEnv }}
+      - name: {{ .name }}
+        value: {{ quote .value }}
+      {{- end }}
+      # inserting links to secrets that are populated by ExternalSecret(s)
+      # of kubernetes-client.io and managed in GCP SM
+      {{- range $i, $secret := $.Values.injectSecretKeys }}
+      {{- range $secret.envNames }}
+      - name: {{ upper . }}
+        secretValue: {{ . }}@{{ $secret.name }}
+      {{- end }}
+      {{- end }}
+      {{- range $i, $secret := $.Values.extraInjectSecretKeys }}
+      {{- range $secret.envNames }}
+      - name: {{ upper . }}
+        secretValue: {{ . }}@{{ $secret.name }}
+      {{- end }}
+      {{- end }}
+    {{- if eq $.Values.bucket.provider "gcs" }}
+    secretFiles:
+      - mountPath: /etc/gcp
+        secretName: {{ $name }}-bucket-secret
+        items:
+          - key: privateKeyData
+            path: credentials.json
+    {{- end }}
+    {{- $files := .Files }}
+    files:
+      - path: /config.yaml
+        content: |-
+          {{- $files.Get config.yaml | toYaml | nindent 6 }}
+    image: "{{ .Values.server.image }}:{{ .Values.server.tag }}"
+  apps:
+    - name: server
+      # reserve for a CPU intensive dashboard
+      cpu: 250m
+      memory: 384Mi
+      command:
+        - python
+      args:
+        - {{ .Values.server.py_path_in_docker }}
+        - --config
+        - /config.yaml
+        - --prod
+        - "false"
+        - --run
+        - server
+      domain:
+        name: {{ $name }}.sbx.huma.com
+        tlsSecretName: pp-star-sbx-huma-com-secret
+      http:
+        paths:
+          - path: /api/
+            service: server
+          - path: /apidocs/
+            service: server
+          - path: /flasgger_static/
+            service: server
+          - path: /health/
+            service: server
+          - path: /helper/
+            service: server
+          - path: /.well-known/
+            service: server
+          - path: /version
+            pathType: Exact
+            service: server
+          - path: /apispec_all.json
+            pathType: Exact
+            service: server
+          - path: /
+            pathType: Prefix
+            service: cp
+          - path: {{ $.Values.mongoExpress.baseUrl }}
+            pathType: Prefix
+            service: mongo-express
+        enablePermissiveCORS: true
+        corsAllowHeaders: "x-hu-locale,x-org-id,x-deployment-id,x-hu-user-agent,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Request-ID,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,x-amz-user-agent"
+      ports:
+        - 80:80
+        {{- if eq $.Values.mongodb.provider "kubedb" }}
+        - 27017:27017
+        {{- end }}
+      livenessProbe:
+        httpGet:
+          path: /health/live
+          port: 80
+        initialDelaySeconds: 3
+        periodSeconds: 60
+      readinessProbe:
+        httpGet:
+          path: /health/ready
+          port: 80
+        initialDelaySeconds: 3
+        periodSeconds: 60
+    - name: server-worker
+      # perform a lot of calculations in the background
+      cpu: 500m
+      memory: 768Mi
+      command:
+        - python
+      args:
+        - {{ .Values.server.py_path_in_docker }}
+        - --config
+        - /config.yaml
+        - --prod
+        - "false"
+        - --run
+        - worker
+      ports:
+        - 80
+    - name: server-beat
+      cpu: 50m
+      memory: 256Mi
+      command:
+        - python
+      args:
+        - {{ .Values.server.py_path_in_docker }}
+        - --config
+        - /config.yaml
+        - --prod
+        - "false"
+        - --run
+        - beat
+      ports:
+        - 80
+    - name: server-cdc
+      cpu: 100m
+      memory: 256Mi
+      command:
+        - python
+      args:
+        - {{ .Values.server.py_path_in_docker }}
+        - --config
+        - /config.yaml
+        - --prod
+        - "false"
+        - --run
+        - cdc
+      ports:
+        - 80

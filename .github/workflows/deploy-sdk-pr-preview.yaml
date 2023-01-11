@@ -24,6 +24,8 @@ on:
       aws_region: { required: false, type: string, default: 'eu-west-2' }
       dockerfile: { required: true, type: string }
       make_build_push_ghcr: { required: true, type: string }
+      helm_extra_values_file: { required: true, type: string }
+      server_extra_config_file: { required: true, type: string }
 
 env:
   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
@@ -186,6 +188,9 @@ jobs:
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           clean_workload: "true"
+          helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
+          server_extra_config_file: ${{ inputs.server_extra_config_file }}
+          py_path_in_docker: /server/dct_server.py
 
       - name: Create Grafana logs dashboard
         id: dashboard
@@ -331,6 +336,38 @@ jobs:
           body: |-
             Failed to clone the selected source bucket to a new GSC bucket.❌
 
+  # backend:
+  #   name: Deploy backend services
+  #   needs:
+  #     - build
+  #     - restore-db
+  #     - copy-bucket
+  #     - check
+  #     - deploy
+  #   if: ${{ needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
+  #     needs.copy-bucket.outputs.error == 0 }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy the service
+  #       id: deploy-backend
+  #       uses: huma-engineering/huma-common-actions/.github/actions/deploy-backend-to-k8s@HCA-NA-add-huma-server-actions
+  #       with:
+  #         value_file: deploy/helmfile/values/gcp/values.gcp-uk-sandbox.yaml
+  #         short_sha: ${{ needs.check.outputs.short_sha }}
+  #         connect_vpn: false
+  #         environment: 'Sandbox'
+  #         kube_type: GKE
+  #         gke_key: ${{ secrets.GKE_SA_KEY }}
+  #         gke_cluster_name: ${{ inputs.cluster_name }}
+  #         gke_cluster_location: ${{ inputs.cluster_location }}
+  #         helmfile_environment: gcp-uk-sandbox
+  #         fill_placeholders: true
+  #         placeholder_namespace: ${{ env.app_namespace }}
+  #         placeholder_api:
+  #         placeholder_web: { description: 'Website domain to be replaced', required: false }
+  #         placeholder_db_name: { description: 'Database name to be replaced', required: false }
+  #         placeholder_gcp_bucket: { description: 'GCP bucket to be replaced', required: false }
+
   report:
     name: Send a preview URL to user
     needs:
@@ -339,6 +376,7 @@ jobs:
       - copy-bucket
       - check
       - deploy
+      # - backend
     if: ${{ needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
       needs.copy-bucket.outputs.error == 0 }}
     runs-on: ubuntu-latest
@@ -404,13 +442,12 @@ jobs:
         with:
           update_chart: ${{ inputs.update_chart }}
           server_name: ${{ inputs.server_name }}
-          host_prefix: ${{ inputs.host_prefix }}
+          host: ${{ env.host_postfix }}
           grafana_host: ${{ inputs.grafana_host }}
           atlas_project_url: ${{ inputs.atlas_project_url }}
           atlas_project: ${{ inputs.atlas_project }}
           atlas_cluster: ${{ inputs.atlas_cluster }}
           app_name: ${{ env.app_name }}
-          host_postfix: ${{ env.host_postfix }}
           db_user: ${{ env.db_user }}
           db_provider: ${{ env.db_provider }}
           bucket_provider: ${{ env.bucket_provider }}

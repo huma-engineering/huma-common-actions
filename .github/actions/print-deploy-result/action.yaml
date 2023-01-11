@@ -7,13 +7,12 @@ branding:
 inputs:
   update_chart: { required: true, description: 'Update chart flag' }
   server_name: { required: true, description: 'Name of the project, such as dctserver' }
-  host_prefix: { required: true, description: 'The root domain name for the deployment' }
+  host: { required: true, description: 'The root domain name for the deployment' }
   grafana_host: { required: true, description: 'The url of grafana host' }
   atlas_project_url: { required: true, description: 'Atlas project url' }
   atlas_project: { required: true, description: 'The name of the project in atlas' }
   atlas_cluster: { required: true, description: 'The cluster name of atlas' }
   app_name: { required: true, description: 'The domain prefix of the deployed app' }
-  host_postfix: { required: true, description: 'The host prefix for mongo' }
   db_user: { required: true, description: 'Database username' }
   db_provider: { required: true, description: 'DB provider, e.g: atlas or kubedb' }
   db_username: { required: true, description: 'Database username' }
@@ -40,12 +39,12 @@ runs:
         template: ./pr-preview-comment-copy.tpl
         vars: |-
           server_name: ${{ inputs.server_name}}
-          url: "https://${{ inputs.app_name }}.${{ inputs.host_postfix }}"
+          url: "https://${{ inputs.host }}"
           mongo_express_url: ${{ format('"https://{0}/mongo-express/db/{1}"',
-            inputs.host_postfix, inputs.db_user) }}
+            inputs.host, inputs.db_user) }}
           mongo_uri: ${{ inputs.db_provider == 'kubedb' &&
             format('"mongodb://{0}:{1}@{2}/{0}"',
-            inputs.db_user, inputs.db_password, inputs.host_postfix) ||
+            inputs.db_user, inputs.db_password, inputs.host) ||
             inputs.db_provider == 'atlas' && inputs.mongo_uri }}
           username: ${{ inputs.db_username }}
           password: ${{ inputs.db_password }}
