@@ -24,6 +24,8 @@ on:
       aws_region: { required: false, type: string, default: 'eu-west-2' }
       dockerfile: { required: true, type: string }
       make_build_push_ghcr: { required: true, type: string }
+      docker_image_name: { required: true, type: string, description: 'Docker image name of make file' }
+      docker_temp_tag_format: { required: true, type: string, description: 'Docker tag format in PRs' }
       helm_extra_values_file: { required: true, type: string }
       server_extra_config_file: { required: true, type: string }
 
@@ -180,9 +182,9 @@ jobs:
           db_provider: ${{ env.db_provider }}
           kubedb_namespace: ${{ inputs.kubedb_namespace }}
           kubedb_cluster: ${{ inputs.kubedb_cluster }}
-          image_repository: ghcr.io/huma-engineering/py-${{ inputs.server_name }}
+          image_repository: ghcr.io/huma-engineering/${{ inputs.docker_image_name }}
           # NOTE: an image_tag should be the same as in job.build
-          image_tag: ${{ env.app_namespace }}-${{ needs.check.outputs.short_sha }}
+          image_tag_format: ${{ docker_temp_tag_format }}
           chart_url: oci://ghcr.io/huma-engineering/helm-charts/huma-backend-requisites
           version: ${{ needs.chart.outputs.version }}
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
@@ -191,6 +193,7 @@ jobs:
           helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
           server_extra_config_file: ${{ inputs.server_extra_config_file }}
           py_path_in_docker: /server/dct_server.py
+          short_sha: ${{ needs.check.outputs.short_sha }}
 
       - name: Create Grafana logs dashboard
         id: dashboard

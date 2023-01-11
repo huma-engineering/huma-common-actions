@@ -44,8 +44,8 @@ inputs:
   image_repository:
     description: Image repository
     required: true
-  image_tag:
-    description: Image tag
+  image_tag_format:
+    description: Image tag format, SHA for short_sha
     default: latest
     required: false
   kubedb_namespace:
@@ -68,6 +68,9 @@ inputs:
     required: true
   py_path_in_docker:
     description: The python execution path inside docker, e.g. /apps/dct_server.py
+    required: true
+  short_sha:
+    description: Git short_sha
     required: true
 outputs:
   error:
@@ -113,13 +116,15 @@ runs:
       run: |-
         echo ${{ inputs.github_token }} |\
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        tag_format=${{ inputs.image_tag_format}}
+        tag="${tag_format/SHA/"${{ inputs.short_sha }}"}"
         helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
           -i --create-namespace -n ${{ inputs.app_namespace }} \
           -f ${{ inputs.helm_extra_values_file }} \
           --version ${{ inputs.version }} \
           --set server.py_path_in_docker=${{ inputs.py_path_in_docker }} \
           --set server.image=${{ inputs.image_repository }} \
-          --set server.tag=${{ inputs.image_tag }} \
+          --set server.tag=$tag \
           --set fullnameOverride=${{ inputs.app_name }} \
           --set mongodb.kubedb.clusterRef.name=${{ inputs.kubedb_cluster }} \
           --set mongodb.kubedb.clusterRef.namespace=${{ inputs.kubedb_namespace }} \
@@ -137,13 +142,15 @@ runs:
       run: |-
         echo ${{ inputs.github_token }} |\
           helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        tag_format=${{ inputs.image_tag_format}}
+        tag="${tag_format/SHA/"${{ inputs.short_sha }}"}"
         helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
           -i --create-namespace -n ${{ inputs.app_namespace }} \
           -f ${{ inputs.helm_extra_values_file }} \
           --version ${{ inputs.version }} \
           --set server.py_path_in_docker=${{ inputs.py_path_in_docker }} \
           --set server.image=${{ inputs.image_repository }} \
-          --set server.tag=${{ inputs.image_tag }} \
+          --set server.tag=$tag \
           --set fullnameOverride=${{ inputs.app_name }} \
           --set mongodb.atlas.clusterName=${{ inputs.atlas_cluster }} \
           --set mongodb.atlas.projectName=${{ inputs.atlas_project }} \
