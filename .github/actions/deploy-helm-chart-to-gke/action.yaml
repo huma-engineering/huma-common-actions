@@ -77,6 +77,9 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
     - name: Authenticate to Google Cloud via a Service Account Key JSON
       uses: google-github-actions/auth@v0
       with:
@@ -94,9 +97,6 @@ runs:
         kubectl delete applicationcomposition --all=true -n ${{ inputs.app_namespace }}
         kubectl delete application --all=true -n ${{ inputs.app_namespace }}
       shell: bash
-
-    - name: Checkout
-      uses: actions/checkout@v3
 
     - name: Merge config-base.yaml and input.server_extra_config_file
       run: |-
