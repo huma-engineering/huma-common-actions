@@ -193,7 +193,6 @@ jobs:
           helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
           server_extra_config_file: ${{ inputs.server_extra_config_file }}
           py_path_in_docker: /server/dct_server.py
-          short_sha: ${{ needs.check.outputs.short_sha }}
 
       - name: Create Grafana logs dashboard
         id: dashboard
