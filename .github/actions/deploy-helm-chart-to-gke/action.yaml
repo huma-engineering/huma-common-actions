@@ -116,6 +116,7 @@ runs:
         helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
           -i --create-namespace -n ${{ inputs.app_namespace }} \
           -f ${{ inputs.helm_extra_values_file }} \
+          --debug \
           --version ${{ inputs.version }} \
           --set server.py_path_in_docker=${{ inputs.py_path_in_docker }}
           --set server.image=${{ inputs.image_repository }} \
@@ -140,6 +141,7 @@ runs:
         helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
           -i --create-namespace -n ${{ inputs.app_namespace }} \
           -f ${{ inputs.helm_extra_values_file }} \
+          --debug \
           --version ${{ inputs.version }} \
           --set server.py_path_in_docker=${{ inputs.py_path_in_docker }}
           --set server.image=${{ inputs.image_repository }} \
