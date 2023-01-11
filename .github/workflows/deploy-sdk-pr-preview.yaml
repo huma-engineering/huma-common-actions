@@ -31,6 +31,10 @@ on:
       server_extra_config_file: { required: true, type: string }
 
 env:
+  is_deploy: ${{ startsWith(github.event.comment.body, '/deploy') }}
+  is_rebuild: ${{ startsWith(github.event.comment.body, '/rebuild') }}
+  testest1: ${{ env.is_deploy }}
+  testest2: ${{ env.is_rebuild }}
   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
   app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
   bucket_provider: ${{ contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3' }}
@@ -52,13 +56,14 @@ jobs:
     name: Deploy command received
     if: ${{ github.event.issue.pull_request
       && github.event.issue.state == 'open'
-      && startsWith(github.event.comment.body, '/deploy') }}
+      && (env.is_deploy || env.is_rebuild)) }}
     runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
       head_sha: ${{ steps.comment-branch.outputs.head_sha }}
       short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
+      - run: "echo 'tt1: ${{ env.testtest1 }}, tt2: ${{ env.testtest2 }}'"
       - uses: xt0rted/pull-request-comment-branch@v1
         id: comment-branch
 
@@ -75,6 +80,7 @@ jobs:
           reactions: eyes
 
       - name: Describe the command to perform
+        if: env.is_deploy
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ env.issue_number }}
@@ -343,38 +349,6 @@ jobs:
           issue-number: ${{ env.issue_number }}
           body: |-
             Failed to clone the selected source bucket to a new GSC bucket.❌
-
-  # backend:
-  #   name: Deploy backend services
-  #   needs:
-  #     - build
-  #     - restore-db
-  #     - copy-bucket
-  #     - check
-  #     - deploy
-  #   if: ${{ needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
-  #     needs.copy-bucket.outputs.error == 0 }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy the service
-  #       id: deploy-backend
-  #       uses: huma-engineering/huma-common-actions/.github/actions/deploy-backend-to-k8s@HCA-NA-add-huma-server-actions
-  #       with:
-  #         value_file: deploy/helmfile/values/gcp/values.gcp-uk-sandbox.yaml
-  #         short_sha: ${{ needs.check.outputs.short_sha }}
-  #         connect_vpn: false
-  #         environment: 'Sandbox'
-  #         kube_type: GKE
-  #         gke_key: ${{ secrets.GKE_SA_KEY }}
-  #         gke_cluster_name: ${{ inputs.cluster_name }}
-  #         gke_cluster_location: ${{ inputs.cluster_location }}
-  #         helmfile_environment: gcp-uk-sandbox
-  #         fill_placeholders: true
-  #         placeholder_namespace: ${{ env.app_namespace }}
-  #         placeholder_api:
-  #         placeholder_web: { description: 'Website domain to be replaced', required: false }
-  #         placeholder_db_name: { description: 'Database name to be replaced', required: false }
-  #         placeholder_gcp_bucket: { description: 'GCP bucket to be replaced', required: false }
 
   report:
     name: Send a preview URL to user
