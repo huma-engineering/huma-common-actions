@@ -80,7 +80,7 @@ spec:
       - path: /config.yaml
         content: |-
           {{- $files.Get "config.yaml" | toYaml | nindent 10 }}
-    image: "{{ .Values.server.image }}:{{ .Values.server.tag }}"
+    image: "{{ .Values.server.image }}::{{ .Values.server.tag }}{{ .Values.server.py_path_in_docker }}"
   apps:
     - name: server
       # reserve for a CPU intensive dashboard

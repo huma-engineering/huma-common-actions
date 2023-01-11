@@ -81,6 +81,7 @@ externalSecrets:
       - pp-sandbox-hu-uk-sandbox-gcs-read-sa
 
 server:
+
   # add here any environment variables which values are not secret ones
   env:
     - name: DEBUG_METRICS
