@@ -66,11 +66,13 @@ jobs:
     outputs:
       is_deploy: ${{ steps.check.outputs.is_deploy }}
       is_rebuild: ${{ steps.check.outputs.is_rebuild }}
+      must_build: ${{ steps.check.outputs.must_build }}
     steps:
       - id: check
         run: |-
           echo "::set-output name=is_deploy::${{ startsWith(github.event.comment.body, '/deploy') }}"
           echo "::set-output name=is_rebuild::${{ startsWith(github.event.comment.body, '/rebuild') }}"
+          echo "::set-output name=must_build::${{ env.must_build }}"
   check:
     needs: task
     name: Deploy command received
@@ -99,7 +101,7 @@ jobs:
           reactions: eyes
 
       - name: Describe the command to perform
-        if: env.is_deploy
+        if: needs.task.outputs.is_deploy
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ env.issue_number }}
@@ -114,7 +116,7 @@ jobs:
               github.server_url, github.repository, github.run_id) }})
 
       - name: create a comment before exit
-        if: env.is_rebuild && !contains(github.event.issue.labels.*.name, 'deployed')
+        if: needs.task.outputs.is_rebuild && !contains(github.event.issue.labels.*.name, 'deployed')
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -123,9 +125,11 @@ jobs:
             Please use a `/deploy` command first to create one.💡
 
   chart:
-    if: env.is_deploy || env.is_rebuild
+    if: needs.task.outputs.is_deploy || needs.task.outputs.is_rebuild
     name: Package and upload the Helm chart
-    needs: check
+    needs:
+      - check
+      - task
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.helm.outputs.version }}
@@ -142,8 +146,10 @@ jobs:
           update_chart: ${{ env.update_chart }}
 
   build:
-    if: env.must_build
-    needs: check
+    needs:
+     - check
+     - task
+    if: needs.task.outputs.must_build
     name: Build and Push Container
     runs-on: ubuntu-latest
     steps:
@@ -188,11 +194,12 @@ jobs:
             commit ${{needs.check.outputs.head_sha}}.❌
 
   deploy:
-    if: env.must_build
     name: Deploy the infrastructure Helm chart to GKE
     needs:
       - check
       - chart
+      - task
+    if: needs.task.outputs.must_build
     runs-on: ubuntu-latest
     outputs:
       dashboard_url: ${{ steps.dashboard.outputs.url }}
@@ -228,7 +235,7 @@ jobs:
 
       - name: Create Grafana logs dashboard
         id: dashboard
-        if: env.is_deploy && steps.helm.outputs.error == 0
+        if: needs.task.outputs.is_deploy && steps.helm.outputs.error == 0
         uses: huma-engineering/huma-github-actions/create-grafana-logs-dashboard@v0.14.0
         with:
           app_name: ${{ env.app_name }}
@@ -263,9 +270,11 @@ jobs:
               github.server_url, github.repository, github.run_id) }})
 
   restore-db:
-    if: env.is_deploy
     name: Restore MongoDB dump
-    needs: deploy
+    needs:
+     - deploy
+     - task
+    if: needs.task.outputs.is_deploy
     runs-on: ubuntu-latest
     outputs:
       error: ${{ steps.restore.outputs.error }}
@@ -306,9 +315,11 @@ jobs:
             Your MongoDB provider is ${{ env.db_provider == 'atlas' && 'Atlas' || 'KubeDB' }}.
 
   copy-bucket:
-    if: env.is_deploy
     name: Clone the selected source bucket to a new GCS or S3 bucket
-    needs: deploy
+    needs:
+     - deploy
+     - task
+    if: needs.task.outputs.is_deploy
     outputs:
       error: ${{ env.bucket_provider == 'gcs' && steps.sync_gcs.outputs.error || steps.sync_s3.outputs.error }}
     runs-on: ubuntu-latest
@@ -378,9 +389,10 @@ jobs:
       - build
       - restore-db
       - copy-bucket
+      - task
       - check
       - deploy
-    if: ${{ env.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
+    if: ${{ needs.task.output.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
       needs.copy-bucket.outputs.error == 0 }}
     runs-on: ubuntu-latest
     steps:
