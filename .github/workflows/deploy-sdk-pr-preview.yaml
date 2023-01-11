@@ -114,7 +114,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.check.outputs.short_sha }}
+          ref: ${{ needs.check.outputs.head_sha }}
       - name: Clone Submodule
         if: ${{ inputs.include_sdk }}
         uses: actions/checkout@v3
@@ -198,6 +198,7 @@ jobs:
           server_extra_config_file: ${{ inputs.server_extra_config_file }}
           py_path_in_docker: /server/dct_server.py
           short_sha: ${{ needs.check.outputs.short_sha }}
+          head_sha: ${{ needs.check.outputs.head_sha }}
 
       - name: Create Grafana logs dashboard
         id: dashboard
@@ -434,7 +435,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.check.outputs.short_sha }}
+          ref: ${{ needs.check.outputs.head_sha }}
 
       - name: Clone Submodule
         if: ${{ inputs.include_sdk }}

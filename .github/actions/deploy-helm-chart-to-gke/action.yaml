@@ -72,6 +72,9 @@ inputs:
   short_sha:
     description: Git short_sha
     required: true
+  head_sha:
+    description: Git head_sha
+    required: true
 outputs:
   error:
     description: action's exit code
@@ -83,7 +86,7 @@ runs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
-        ref: ${{ inputs.short_sha }}
+        ref: ${{ inputs.head_sha }}
 
     - name: Authenticate to Google Cloud via a Service Account Key JSON
       uses: google-github-actions/auth@v0
