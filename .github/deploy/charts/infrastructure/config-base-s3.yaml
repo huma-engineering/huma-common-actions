@@ -134,13 +134,8 @@ server:
     signedUrlSecret: !ENV ${MP_SIGNED_URL_SECRET}
 
   storage:
-    {{- if eq $.Values.bucket.provider "s3" }}
     enable: true
     storageAdapter: MINIO
-    {{- else if eq $.Values.bucket.provider "gcs" }}
-    enable: true
-    storageAdapter: GCS
-    {{- end }}
     allowedBuckets:
       - !ENV ${MP_BUCKET_NAME}
     defaultBucket: !ENV ${MP_BUCKET_NAME}
@@ -215,16 +210,11 @@ server:
       mailgunApiUrlTemplate: !ENV ${MP_MAILGUN_API_URL_TEMPLATE}
       apiKey: !ENV ${MP_MAILGUN_API_KEY}
       defaultFromEmail: !ENV ${MP_FROM_EMAIL}
-    {{- if eq $.Values.bucket.provider "s3" }}
     minio:
       secure: true
       accessKey: !ENV ${MP_MINIO_ACCESS_KEY}
       secretKey: !ENV ${MP_MINIO_SECRET_KEY}
       url: !ENV ${MP_MINIO_URL}
-    {{- else if eq $.Values.bucket.provider "gcs" }}
-    gcs:
-      serviceAccountKeyFilePath: !ENV ${MP_GCS_SA_FILE_PATH}
-    {{- end }}
     apnsPush:
       useSandbox: !ENVBOOL ${MP_APNS_USE_SANDBOX}
       teamId: !ENV ${MP_APNS_TEAM_ID}

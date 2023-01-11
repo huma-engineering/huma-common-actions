@@ -98,7 +98,7 @@ runs:
     - name: Merge config-base.yaml and input.server_extra_config_file
       run: |-
         yq eval-all '. as $item ireduce ({}; . * $item)' \
-          ${{ github.action_path }}/../../deploy/charts/infrastructure/config-base.yaml \
+          ${{ github.action_path }}/../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \
           ${{ inputs.server_extra_config_file }} >> config.yaml
       shell: bash
     # ref: https://helm.sh/docs/topics/registries/
