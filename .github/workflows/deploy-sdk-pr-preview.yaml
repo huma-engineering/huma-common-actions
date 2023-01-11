@@ -64,9 +64,9 @@ jobs:
     name: Check if this flow must be run at all or not
     runs-on: ubuntu-latest
     outputs:
-      is_deploy: ${{ steps.check.outputs.is_deploy }}
-      is_rebuild: ${{ steps.check.outputs.is_rebuild }}
-      must_build: ${{ steps.check.outputs.must_build }}
+      is_deploy: ${{ steps.check.outputs.is_deploy == 'true' }}
+      is_rebuild: ${{ steps.check.outputs.is_rebuild == 'true' }}
+      must_build: ${{ steps.check.outputs.must_build == 'true' }}
     steps:
       - id: check
         run: |-
