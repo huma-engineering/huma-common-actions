@@ -78,7 +78,7 @@ jobs:
     name: Deploy command received
     if: ${{ github.event.issue.pull_request
       && github.event.issue.state == 'open'
-      && (needs.task.output.is_deploy || needs.task.output.is_rebuild) }}
+      && (needs.task.outputs.is_deploy || needs.task.outputs.is_rebuild) }}
     runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.comment-branch.outputs.head_ref }}
@@ -392,7 +392,7 @@ jobs:
       - task
       - check
       - deploy
-    if: ${{ needs.task.output.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
+    if: ${{ needs.task.outputs.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
       needs.copy-bucket.outputs.error == 0 }}
     runs-on: ubuntu-latest
     steps:
