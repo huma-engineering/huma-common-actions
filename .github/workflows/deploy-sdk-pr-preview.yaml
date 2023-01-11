@@ -33,10 +33,22 @@ on:
 env:
   is_deploy: ${{ startsWith(github.event.comment.body, '/deploy') }}
   is_rebuild: ${{ startsWith(github.event.comment.body, '/rebuild') }}
+  must_build: ${{
+    startsWith(github.event.comment.body, '/deploy') ||
+    (startsWith(github.event.comment.body, '/rebuild') &&
+      contains(github.event.issue.labels.*.name, 'deployed')) }}
   app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
   app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
-  bucket_provider: ${{ (startsWith(github.event.comment.body, '/deploy') && (contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3') || (startsWith(github.event.comment.body, '/rebuild') && (contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3')) }}
-  db_provider: ${{ contains(github.event.comment.body, '--mongodb=atlas') && 'atlas' || 'kubedb' }}
+  bucket_provider: ${{ (
+    startsWith(github.event.comment.body, '/deploy') &&
+      (contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3') ||
+    (startsWith(github.event.comment.body, '/rebuild') &&
+      (contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3')) }}
+  db_provider: ${{ (
+    startsWith(github.event.comment.body, '/deploy') &&
+      (contains(github.event.comment.body, '--mongodb=atlas') && 'atlas' || 'kubedb') ||
+    (startsWith(github.event.comment.body, '/rebuild') &&
+      (contains(github.event.issue.labels.*.name, 'deployed_atlas_mongodb') && 'atlas' || 'kubedb')) }}
   db_user: ${{ inputs.server_name }}-${{ github.event.issue.number }}-db
   full_db_dump_prefix: ${{ contains(github.event.comment.body, '--db-full') && 'full_' || '' }}
   issue_number: ${{ github.event.issue.number }}
@@ -91,6 +103,15 @@ jobs:
             [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
               github.server_url, github.repository, github.run_id) }})
 
+      - name: create a comment before exit
+        if: env.is_rebuild && !contains(github.event.issue.labels.*.name, 'deployed')
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            This PR don't have a preview deployment yet.❌
+            Please use a `/deploy` command first to create one.💡
+
   chart:
     name: Package and upload the Helm chart
     needs: check
@@ -110,6 +131,7 @@ jobs:
           update_chart: ${{ env.update_chart }}
 
   build:
+    if: env.must_build
     needs: check
     name: Build and Push Container
     runs-on: ubuntu-latest
@@ -135,17 +157,6 @@ jobs:
         run: |-
           make ${{ inputs.make_build_push_ghcr }} && error=0 || error=$?
           echo "::set-output name=error::$error"
-      # - name: Build and Push Container
-      #   id: build
-      #   uses: huma-engineering/huma-github-actions/build-server-sdk-container@v0.14.0
-      #   with:
-      #     tag: ${{ env.app_namespace }}-${{ needs.check.outputs.short_sha }}
-      #     github_ref: ${{ needs.check.outputs.head_sha }}
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     github_user: ${{ github.actor }}
-      #     registry: ghcr.io
-      #     repository: ghcr.io/huma-engineering/py-${{ inputs.server_name }}
-      #     dockerfile: ${{ inputs.dockerfile }}
 
       - name: Report on build success
         if: steps.build.outputs.error == 0
@@ -166,6 +177,7 @@ jobs:
             commit ${{needs.check.outputs.head_sha}}.❌
 
   deploy:
+    if: env.must_build
     name: Deploy the infrastructure Helm chart to GKE
     needs:
       - check
@@ -205,7 +217,7 @@ jobs:
 
       - name: Create Grafana logs dashboard
         id: dashboard
-        if: steps.helm.outputs.error == 0
+        if: env.is_deploy && steps.helm.outputs.error == 0
         uses: huma-engineering/huma-github-actions/create-grafana-logs-dashboard@v0.14.0
         with:
           app_name: ${{ env.app_name }}
@@ -240,6 +252,7 @@ jobs:
               github.server_url, github.repository, github.run_id) }})
 
   restore-db:
+    if: env.is_deploy
     name: Restore MongoDB dump
     needs: deploy
     runs-on: ubuntu-latest
@@ -282,6 +295,7 @@ jobs:
             Your MongoDB provider is ${{ env.db_provider == 'atlas' && 'Atlas' || 'KubeDB' }}.
 
   copy-bucket:
+    if: env.is_deploy
     name: Clone the selected source bucket to a new GCS or S3 bucket
     needs: deploy
     outputs:
@@ -356,7 +370,7 @@ jobs:
       - check
       - deploy
       # - backend
-    if: ${{ needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
+    if: ${{ env.is_deploy && needs.deploy.outputs.error == 0 && needs.restore-db.outputs.error == 0 &&
       needs.copy-bucket.outputs.error == 0 }}
     runs-on: ubuntu-latest
     steps:
