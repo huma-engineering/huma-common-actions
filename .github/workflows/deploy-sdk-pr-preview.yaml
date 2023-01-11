@@ -184,7 +184,7 @@ jobs:
           kubedb_cluster: ${{ inputs.kubedb_cluster }}
           image_repository: ghcr.io/huma-engineering/${{ inputs.docker_image_name }}
           # NOTE: an image_tag should be the same as in job.build
-          image_tag_format: ${{ docker_temp_tag_format }}
+          image_tag_format: ${{ inputs.docker_temp_tag_format }}
           chart_url: oci://ghcr.io/huma-engineering/helm-charts/huma-backend-requisites
           version: ${{ needs.chart.outputs.version }}
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
