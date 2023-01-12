@@ -32,36 +32,36 @@ on:
 
 # yamllint disable rule:line-length
 jobs:
-  deploy:
-    uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
-    secrets: inherit
-    with:
-      server_name: ${{ inputs.server_name }}
-      include_sdk: ${{ inputs.include_sdk }}
-      sdk_ref: ${{ inputs.sdk_ref }}
-      cluster_name: ${{ inputs.cluster_name }}
-      cluster_location: ${{ inputs.cluster_location }}
-      atlas_cluster: ${{ inputs.atlas_cluster }}
-      atlas_project: ${{ inputs.atlas_project }}
-      atlas_project_url: ${{ inputs.atlas_project_url }}
-      db_dump_bucket_name: ${{ inputs.db_dump_bucket_name }}
-      kubedb_cluster: ${{ inputs.kubedb_cluster }}
-      kubedb_namespace: ${{ inputs.kubedb_namespace }}
-      grafana_host: ${{ inputs.grafana_host }}
-      grafana_cluster_name: ${{ inputs.grafana_cluster_name }}
-      host_postfix: ${{ inputs.host_postfix }}
-      source_gcs_bucket_qa: ${{ inputs.source_gcs_bucket_qa }}
-      source_gcs_bucket_dev: ${{ inputs.source_gcs_bucket_dev }}
-      source_s3_bucket_qa: ${{ inputs.source_s3_bucket_qa }}
-      source_s3_bucket_dev: ${{ inputs.source_s3_bucket_dev }}
-      make_upload_chart_command: ${{ inputs.make_upload_chart_command }}
-      aws_region: ${{ inputs.aws_region }}
-      dockerfile: ${{ inputs.dockerfile }}
-      make_build_push_ghcr: ${{ inputs.make_build_push_ghcr }}
-      docker_image_name: ${{ inputs.docker_image_name }}
-      docker_temp_tag_format: ${{ inputs.docker_temp_tag_format }}
-      helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
-      server_extra_config_file: ${{ inputs.server_extra_config_file }}
+  # deploy:
+  #   uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
+  #   secrets: inherit
+  #   with:
+  #     server_name: ${{ inputs.server_name }}
+  #     include_sdk: ${{ inputs.include_sdk }}
+  #     sdk_ref: ${{ inputs.sdk_ref }}
+  #     cluster_name: ${{ inputs.cluster_name }}
+  #     cluster_location: ${{ inputs.cluster_location }}
+  #     atlas_cluster: ${{ inputs.atlas_cluster }}
+  #     atlas_project: ${{ inputs.atlas_project }}
+  #     atlas_project_url: ${{ inputs.atlas_project_url }}
+  #     db_dump_bucket_name: ${{ inputs.db_dump_bucket_name }}
+  #     kubedb_cluster: ${{ inputs.kubedb_cluster }}
+  #     kubedb_namespace: ${{ inputs.kubedb_namespace }}
+  #     grafana_host: ${{ inputs.grafana_host }}
+  #     grafana_cluster_name: ${{ inputs.grafana_cluster_name }}
+  #     host_postfix: ${{ inputs.host_postfix }}
+  #     source_gcs_bucket_qa: ${{ inputs.source_gcs_bucket_qa }}
+  #     source_gcs_bucket_dev: ${{ inputs.source_gcs_bucket_dev }}
+  #     source_s3_bucket_qa: ${{ inputs.source_s3_bucket_qa }}
+  #     source_s3_bucket_dev: ${{ inputs.source_s3_bucket_dev }}
+  #     make_upload_chart_command: ${{ inputs.make_upload_chart_command }}
+  #     aws_region: ${{ inputs.aws_region }}
+  #     dockerfile: ${{ inputs.dockerfile }}
+  #     make_build_push_ghcr: ${{ inputs.make_build_push_ghcr }}
+  #     docker_image_name: ${{ inputs.docker_image_name }}
+  #     docker_temp_tag_format: ${{ inputs.docker_temp_tag_format }}
+  #     helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
+  #     server_extra_config_file: ${{ inputs.server_extra_config_file }}
 
   cleanup:
     uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
@@ -70,5 +70,5 @@ jobs:
       server_name: ${{ inputs.server_name }}
       grafana_host: ${{ inputs.grafana_host }}
 
-  rebase:
-    uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions
+  # rebase:
+  #   uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions

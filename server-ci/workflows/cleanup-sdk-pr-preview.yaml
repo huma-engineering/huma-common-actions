@@ -1,18 +1,16 @@
 name: Uninstall the Huma Server SDK Helm chart
 
-on:
-  workflow_call:
-    inputs:
-      server_name: { required: true, type: string }
-      cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
-      cluster_location: { required: false, type: string, default: 'europe-west2' }
-      grafana_host: { required: true, type: string }
+inputs:
+  server_name: { required: true, type: string }
+  cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+  cluster_location: { required: false, type: string, default: 'europe-west2' }
+  grafana_host: { required: true, type: string }
 
 env:
   issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
     github.event.pull_request.number }}
 
-jobs:
+runs:
   uninstall:
     name: Uninstall a Helm chart
     # if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
