@@ -11,6 +11,7 @@ env:
     github.event.pull_request.number }}
 
 runs:
+  using: composite
   uninstall:
     name: Uninstall a Helm chart
     # if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
