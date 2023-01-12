@@ -77,6 +77,8 @@ jobs:
           cluster_location: ${{ inputs.cluster_location }}
           issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
             github.event.pull_request.number }}
+          gke_sa_key: ${{ secrets.GKE_SA_KEY }}
+          grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
 
   # rebase:
   #   uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions

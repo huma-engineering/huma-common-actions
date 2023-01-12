@@ -5,7 +5,9 @@ inputs:
   cluster_name: { required: false, description: '' }
   cluster_location: { required: false, description: '' }
   grafana_host: { required: true, description: '' }
-  issue_number: { required: true, description: ''}
+  issue_number: { required: true, description: '' }
+  gke_sa_key: { required: true, description: '' }
+  grafana_api_key: { required: true, description: '' }
 
 runs:
   using: composite
@@ -16,16 +18,16 @@ runs:
       with:
         cluster_name: ${{ inputs.cluster_name }}
         location: ${{ inputs.cluster_location }}
-        app_name: ${{ inputs.server_name }}-${{ env.issue_number }}
-        app_namespace: pr-preview-${{ inputs.server_name }}-${{ env.issue_number }}
+        app_name: ${{ inputs.server_name }}-${{ inputs.issue_number }}
+        app_namespace: pr-preview-${{ inputs.server_name }}-${{ inputs.issue_number }}
         delete_namespace: "true"
-        gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+        gcp_credentials: ${{ inputs.gke_sa_key }}
 
     - name: put a comment on success
       if: steps.helm.outputs.error == 0
       uses: peter-evans/create-or-update-comment@v2
       with:
-        issue-number: ${{ env.issue_number }}
+        issue-number: ${{ inputs.issue_number }}
         body: |-
           Uninstalled the ${{ inputs.server_name }} application's Helm chart.👌
           Removed the connected storage bucket, database and cache.
@@ -36,7 +38,7 @@ runs:
       if: steps.helm.outputs.error != 0
       uses: peter-evans/create-or-update-comment@v2
       with:
-        issue-number: ${{ env.issue_number }}
+        issue-number: ${{ inputs.issue_number }}
         body: |-
           Failed to uninstall the ${{ inputs.server_name }} application's Helm chart.❌
           [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
@@ -62,20 +64,20 @@ runs:
       id: dashboard
       uses: huma-engineering/huma-github-actions/remove-grafana-dashboard@v0.14.0
       with:
-        title: ${{ inputs.server_name }}-${{ env.issue_number }}-logs
-        grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
+        title: ${{ inputs.server_name }}-${{ inputs.issue_number }}-logs
+        grafana_api_key: ${{ inputs.grafana_api_key }}
         grafana_host: ${{ inputs.grafana_host }}
 
     - name: comment on remove dashboard success
       if: ${{ steps.dashboard.outputs.error == 0 }}
       uses: peter-evans/create-or-update-comment@v2
       with:
-        issue-number: ${{ env.issue_number }}
+        issue-number: ${{ inputs.issue_number }}
         body: ${{ steps.dashboard.outputs.response }}👌
 
     - name: comment on remove dashboard failure
       if: ${{ steps.dashboard.outputs.error != 0 }}
       uses: peter-evans/create-or-update-comment@v2
       with:
-        issue-number: ${{ env.issue_number }}
+        issue-number: ${{ inputs.issue_number }}
         body: Dashboard not found❌
