@@ -64,12 +64,19 @@ jobs:
   #     server_extra_config_file: ${{ inputs.server_extra_config_file }}
 
   cleanup:
+    if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/destroy')) || github.event.action == 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'deployed') }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-pr-preview@HCA-NA-add-huma-server-actions
         with:
           server_name: ${{ inputs.server_name }}
           grafana_host: ${{ inputs.grafana_host }}
+          cluster_name: ${{ inputs.cluster_name }}
+          cluster_location: ${{ inputs.cluster_location }}
+          issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
+            github.event.pull_request.number }}
 
   # rebase:
   #   uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions

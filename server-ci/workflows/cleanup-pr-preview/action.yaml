@@ -1,92 +1,81 @@
 name: Uninstall the Huma Server SDK Helm chart
-
+description: Uninstall the Huma Server SDK Helm chart
 inputs:
-  server_name: { required: true, type: string }
-  cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
-  cluster_location: { required: false, type: string, default: 'europe-west2' }
-  grafana_host: { required: true, type: string }
-
-env:
-  issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
-    github.event.pull_request.number }}
+  server_name: { required: true, description: ''}
+  cluster_name: { required: false, description: '' }
+  cluster_location: { required: false, description: '' }
+  grafana_host: { required: true, description: '' }
+  issue_number: { required: true, description: ''}
 
 runs:
   using: composite
-  uninstall:
-    name: Uninstall a Helm chart
-    # if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
-    #   startsWith(github.event.comment.body, '/destroy')) }}
-    if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
-      startsWith(github.event.comment.body, '/destroy')) || github.event.action == 'closed' &&
-      contains(github.event.pull_request.labels.*.name, 'deployed') }}
-    runs-on: ubuntu-latest
-    steps:
-      - id: helm
-        name: Uninstall a Helm chart
-        uses: huma-engineering/huma-common-actions/.github/actions/uninstall-helm-chart@HCA-NA-add-huma-server-actions
-        with:
-          cluster_name: ${{ inputs.cluster_name }}
-          location: ${{ inputs.cluster_location }}
-          app_name: ${{ inputs.server_name }}-${{ env.issue_number }}
-          app_namespace: pr-preview-${{ inputs.server_name }}-${{ env.issue_number }}
-          delete_namespace: "true"
-          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+  steps:
+    - id: helm
+      name: Uninstall a Helm chart
+      uses: huma-engineering/huma-common-actions/.github/actions/uninstall-helm-chart@HCA-NA-add-huma-server-actions
+      with:
+        cluster_name: ${{ inputs.cluster_name }}
+        location: ${{ inputs.cluster_location }}
+        app_name: ${{ inputs.server_name }}-${{ env.issue_number }}
+        app_namespace: pr-preview-${{ inputs.server_name }}-${{ env.issue_number }}
+        delete_namespace: "true"
+        gcp_credentials: ${{ secrets.GKE_SA_KEY }}
 
-      - name: put a comment on success
-        if: steps.helm.outputs.error == 0
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          issue-number: ${{ env.issue_number }}
-          body: |-
-            Uninstalled the ${{ inputs.server_name }} application's Helm chart.👌
-            Removed the connected storage bucket, database and cache.
-            [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
-              github.server_url, github.repository, github.run_id) }})
+    - name: put a comment on success
+      if: steps.helm.outputs.error == 0
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ env.issue_number }}
+        body: |-
+          Uninstalled the ${{ inputs.server_name }} application's Helm chart.👌
+          Removed the connected storage bucket, database and cache.
+          [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+            github.server_url, github.repository, github.run_id) }})
 
-      - name: put a comment on failure
-        if: steps.helm.outputs.error != 0
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          issue-number: ${{ env.issue_number }}
-          body: |-
-            Failed to uninstall the ${{ inputs.server_name }} application's Helm chart.❌
-            [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
-              github.server_url, github.repository, github.run_id) }})
+    - name: put a comment on failure
+      if: steps.helm.outputs.error != 0
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ env.issue_number }}
+        body: |-
+          Failed to uninstall the ${{ inputs.server_name }} application's Helm chart.❌
+          [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+            github.server_url, github.repository, github.run_id) }})
 
-      - if: steps.helm.outputs.error == 0
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          labels: deployed
+    - if: steps.helm.outputs.error == 0
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        labels: deployed
 
-      - if: steps.helm.outputs.error == 0
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          labels: deployed_atlas_mongodb
+    - if: steps.helm.outputs.error == 0
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        labels: deployed_atlas_mongodb
 
-      - if: steps.helm.outputs.error == 0
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          labels: deployed_gcs_bucket
+    - if: steps.helm.outputs.error == 0
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        labels: deployed_gcs_bucket
 
-      - name: remove Grafana logs dashboard
-        if: steps.helm.outputs.error == 0
-        id: dashboard
-        uses: huma-engineering/huma-github-actions/remove-grafana-dashboard@v0.14.0
-        with:
-          title: ${{ inputs.server_name }}-${{ env.issue_number }}-logs
-          grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
-          grafana_host: ${{ inputs.grafana_host }}
+    - name: remove Grafana logs dashboard
+      if: steps.helm.outputs.error == 0
+      id: dashboard
+      uses: huma-engineering/huma-github-actions/remove-grafana-dashboard@v0.14.0
+      with:
+        title: ${{ inputs.server_name }}-${{ env.issue_number }}-logs
+        grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
+        grafana_host: ${{ inputs.grafana_host }}
 
-      - name: comment on remove dashboard success
-        if: ${{ steps.dashboard.outputs.error == 0 }}
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          issue-number: ${{ env.issue_number }}
-          body: ${{ steps.dashboard.outputs.response }}👌
+    - name: comment on remove dashboard success
+      if: ${{ steps.dashboard.outputs.error == 0 }}
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ env.issue_number }}
+        body: ${{ steps.dashboard.outputs.response }}👌
 
-      - name: comment on remove dashboard failure
-        if: ${{ steps.dashboard.outputs.error != 0 }}
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          issue-number: ${{ env.issue_number }}
-          body: Dashboard not found❌
+    - name: comment on remove dashboard failure
+      if: ${{ steps.dashboard.outputs.error != 0 }}
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ env.issue_number }}
+        body: Dashboard not found❌
