@@ -66,7 +66,7 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-pr-preview@HCA-NA-add-huma-server-actions
         with:
           server_name: ${{ inputs.server_name }}
           grafana_host: ${{ inputs.grafana_host }}
