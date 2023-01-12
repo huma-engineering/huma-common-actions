@@ -1,0 +1,53 @@
+name: Quick and full snapshots of dev and QA db
+on:
+  workflow_call:
+    inputs:
+      server_name: { required: true, type: string }
+      db_dump_bucket_name: { required: false, type: string, default: 'hu-europe2-github-action-pr-preview-bucket' }
+      dump_options: { required: false, type: string }
+      file_prefix: { required: true, type: string }
+      dev_db_name: { required: false, type: string, description: 'Set empty string to ignore' }
+      qa_db_name: { required: false, type: string, description: 'Set empty string to ignore' }
+
+jobs:
+  dev:
+    if: inputs.dev_db_name != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+        with:
+          bucket_name: ${{ inputs.db_dump_bucket_name }}
+          archive_name: ${{ inputs.server_name }}_${{ inputs.file_prefix }}_dump_hs_sandbox_dev.gz
+          db_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
+            secrets.MONGO_PRE_PROD_USER_NAME,
+            secrets.MONGO_PRE_PROD_USER_PWD,
+            secrets.MONGO_PRE_PROD_HOST,
+            inputs.dev_db_name
+            ) }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
+          dump_options: ${{ inputs.dump_options }}
+
+  qa:
+    if: inputs.qa_db_name != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+        with:
+          bucket_name: ${{ inputs.db_dump_bucket_name }}
+          archive_name: ${{ inputs.server_name }}_${{ inputs.file_prefix }}_dump_hs_sandbox_qa.gz
+          db_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
+            secrets.MONGO_PRE_PROD_USER_NAME,
+            secrets.MONGO_PRE_PROD_USER_PWD,
+            secrets.MONGO_PRE_PROD_HOST,
+            inputs.qa_db_name
+            ) }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
+          dump_options: ${{ inputs.dump_options }}

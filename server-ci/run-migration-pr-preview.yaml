@@ -1,0 +1,99 @@
+name: Run migrations for a PR preview deployment
+
+on:
+  workflow_call:
+    inputs:
+      server_name: { required: true, type: string }
+      include_sdk: { required: true, type: boolean }
+      cluster_name: { required: true, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+      cluster_location: { required: false, type: string, default: 'europe-west2' }
+      migrate_py: { required: true, type: string }
+      migrate_config: { required: true, type: string }
+
+env:
+  app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
+
+jobs:
+  check:
+    name: Put a reaction to show user that GHA acknowledge a command
+    if: ${{ github.event.issue.pull_request
+      && github.event.issue.state == 'open'
+      && startsWith(github.event.comment.body, '/run-migration') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Put reaction on the command message
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: eyes
+
+      - name: create a comment before exit
+        if: ${{ !contains(github.event.issue.labels.*.name, 'deployed') }}
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            This PR don't have a preview deployment yet.❌
+            Please use a `/deploy` command first to create one.💡
+
+  migrate:
+    if: ${{ contains(github.event.issue.labels.*.name, 'deployed') }}
+    name: Run migrations for a PR preview deployment
+    needs: check
+    outputs:
+      result: ${{ steps.migrate.outputs.result }}
+      error: ${{ steps.migrate.outputs.error }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud via a Service Account Key JSON
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GKE_SA_KEY }}
+
+      - name: Get the GKE credentials so we can deploy to the cluster
+        uses: google-github-actions/get-gke-credentials@v0
+        with:
+          cluster_name: ${{ inputs.cluster_name }}
+          location: ${{ inputs.cluster_location }}
+
+      - name: Run migrations for a PR preview deployment
+        id: migrate
+        run: |
+          result=$(kubectl exec -n ${{ env.app_namespace }} deploy/${{ inputs.server_name }} \
+            -- python ${{ inputs.migrate_py }} \
+            --config ${{ inputs.migrate_config }} 2>&1) && error=0 || error=$?
+          # remove special characters
+          result="${result//'%'/'%25'}"
+          result="${result//$'\n'/'%0A'}"
+          result="${result//$'\r'/'%0D'}"
+          echo "${result}"
+          echo "::set-output name=result::$result"
+          echo "::set-output name=error::$error"
+
+      - name: Send back the result
+        if: steps.migrate.outputs.error == 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Running the migration command `python migrate.py --config config.yaml`
+            returns the following output:
+            ```sh
+            ${{ steps.migrate.outputs.result }}
+            ```
+            [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id) }})
+
+      - name: Report on migrate failure
+        if: steps.migrate.outputs.error != 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Failed to run migration.❌
+            Got the following output:
+            ```sh
+            ${{ steps.migrate.outputs.result }}
+            ```
+            [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id) }})
