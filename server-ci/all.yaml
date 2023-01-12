@@ -1,0 +1,37 @@
+name: Mega pipeline
+
+on:
+  workflow_call:
+    inputs:
+      server_name: { required: true, type: string }
+      include_sdk: { required: true, type: boolean }
+      sdk_ref: { required: false, type: string }
+      cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+      cluster_location: { required: false, type: string, default: 'europe-west2' }
+      atlas_cluster: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview' }
+      atlas_project: { required: false, type: string, default: 'hu-sandbox' }
+      atlas_project_url: { required: false, type: string, default: 'https://cloud.mongodb.com/v2/5f1313011621fe3c7268a8b1' }
+      db_dump_bucket_name: { required: false, type: string, default: 'hu-europe2-github-action-pr-preview-bucket' }
+      kubedb_cluster: { required: true, type: string }
+      kubedb_namespace: { required: false, type: string, default: 'kubedb' }
+      grafana_host: { required: true, type: string }
+      grafana_cluster_name: { required: true, type: string }
+      host_postfix: { required: true, type: string }
+      source_gcs_bucket_qa: { required: true, type: string }
+      source_gcs_bucket_dev: { required: true, type: string }
+      source_s3_bucket_qa: { required: true, type: string }
+      source_s3_bucket_dev: { required: true, type: string }
+      make_upload_chart_command: { required: true, type: string }
+      aws_region: { required: false, type: string, default: 'eu-west-2' }
+      dockerfile: { required: true, type: string }
+      make_build_push_ghcr: { required: true, type: string }
+      docker_image_name: { required: true, type: string, description: 'Docker image name of make file' }
+      docker_temp_tag_format: { required: true, type: string, description: 'Docker tag format in PRs' }
+      helm_extra_values_file: { required: true, type: string }
+      server_extra_config_file: { required: true, type: string }
+
+# yamllint disable rule:line-length
+runs:
+  using: composite
+  steps:
+    - run: echo "Hello"
