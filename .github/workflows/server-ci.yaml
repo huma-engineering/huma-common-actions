@@ -33,7 +33,7 @@ on:
 # yamllint disable rule:line-length
 jobs:
   deploy:
-    uses: huma-engineering/huma-common-actions/.github/workflows/deploy-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
+    uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
     secrets: inherit
     with:
       server_name: ${{ inputs.server_name }}
@@ -64,11 +64,11 @@ jobs:
       server_extra_config_file: ${{ inputs.server_extra_config_file }}
 
   cleanup:
-    uses: huma-engineering/huma-common-actions/.github/workflows/cleanup-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
+    uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
     secrets: inherit
     with:
       server_name: ${{ inputs.server_name }}
       grafana_host: ${{ inputs.grafana_host }}
 
   rebase:
-    uses: huma-engineering/huma-common-actions/.github/workflows/rebase.yaml@HCA-NA-add-huma-server-actions
+    uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions
