@@ -1,4 +1,4 @@
-name: Quick snapshots of dev and QA db
+name: Quick and full snapshots of dev and QA db
 on:
   workflow_call:
     inputs:
