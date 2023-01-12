@@ -63,17 +63,13 @@ jobs:
   #     helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
   #     server_extra_config_file: ${{ inputs.server_extra_config_file }}
 
-  # cleanup:
-  #   uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
-  #   secrets: inherit
-  #   with:
-  #     server_name: ${{ inputs.server_name }}
-  #     grafana_host: ${{ inputs.grafana_host }}
-
-  tests:
-    name: test
+  cleanup:
     runs-on: ubuntu-latest
     steps:
-      - run: echo 'hello'
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-sdk-pr-preview.yaml@HCA-NA-add-huma-server-actions
+        with:
+          server_name: ${{ inputs.server_name }}
+          grafana_host: ${{ inputs.grafana_host }}
+
   # rebase:
   #   uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions
