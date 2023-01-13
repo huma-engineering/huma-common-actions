@@ -32,7 +32,7 @@ runs:
     - name: 'Get chart version'
       id: skip
       run: |
-        echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml)"
+        echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../../../deploy/charts/infrastructure/Chart.yaml)"
       shell: bash
 
     - name: Package and upload the chart
@@ -40,9 +40,9 @@ runs:
       id: update
       env:
         HELM_EXPERIMENTAL_OCI: "1"
-        path: ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml
+        path: ${{ github.action_path }}/../../../deploy/charts/infrastructure/Chart.yaml
         # tag: "-${{ inputs.short_sha }}"
-      working-directory: ${{ github.action_path }}/../../deploy/charts/infrastructure/
+      working-directory: ${{ github.action_path }}/../../../deploy/charts/infrastructure/
       run: |
         # yq '.version += strenv(tag)' -i ${path}
         echo ${{ github.token }} |\
