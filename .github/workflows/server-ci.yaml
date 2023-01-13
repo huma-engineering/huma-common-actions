@@ -320,7 +320,7 @@ jobs:
 
   # mongo automatic dumps
   dump-mongo-dev-full:
-    if: ${{ inputs.dev_mongo_db_name != '' && !endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && !endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
@@ -336,7 +336,7 @@ jobs:
           dump_options: ''
 
   dump-mongo-dev-quick:
-    if: ${{ inputs.dev_mongo_db_name != '' && endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
@@ -352,7 +352,7 @@ jobs:
           dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
 
   dump-mongo-qa-full:
-    if: ${{ inputs.qa_mongo_db_name != '' && !endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.qa_mongo_db_name != '' && github.event.schedule != '' && !endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
@@ -368,7 +368,7 @@ jobs:
           dump_options: ''
 
   dump-mongo-qa-quick:
-    if: ${{ inputs.qa_mongo_db_name != '' && endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.qa_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
