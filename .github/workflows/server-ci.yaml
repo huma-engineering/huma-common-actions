@@ -419,8 +419,19 @@ jobs:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/help-pr-preview@HCA-NA-add-huma-server-actions
 
   # /publishing to dev and QA
+  publish-task:
+    name: Check if this flow must be run at all or not
+    runs-on: ubuntu-latest
+    outputs:
+      is_publish_task: ${{ steps.action.outputs.is_publish_task }}
+    steps:
+      - id: check
+        run: |-
+          echo "::set-output name=is_publish_task::${{ env.is_publish_task }}"
+
   publish-tests:
-    if: ${{ env.is_publish_task }}
+    needs: publish-task
+    if: ${{ needs.publish-task.outputs.is_publish_task }}
     name: Run tests
     runs-on: ubuntu-20.04
     steps:
@@ -433,24 +444,30 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-coverage-results:
-    needs: publish-tests
-    if: ${{ env.is_publish_task && success() }}
+    needs:
+     - publish-tests
+     - publish-task
+    if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Publish coverage results
     runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/2-publish-coverage-results@HCA-NA-add-huma-server-actions
 
   publish-test-results:
-    needs: publish-tests
-    if: ${{ env.is_publish_task && success() }}
+    needs:
+     - publish-tests
+     - publish-task
+    if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Publish test results
     runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/3-publish-test-results@HCA-NA-add-huma-server-actions
 
   publish-build-and-push:
-    needs: publish-tests
-    if: ${{ env.is_publish_task && success() }}
+    needs:
+     - publish-tests
+     - publish-task
+    if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Build and push py-${{ inputs.server_name }} image
     runs-on: ubuntu-20.04
     steps:
@@ -463,8 +480,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-deploy-to-dev:
-    needs: publish-build-and-push
-    if: ${{ env.is_publish_task && success() }}
+    needs:
+     - publish-build-and-push
+     - publish-task
+    if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Update DEV env
     runs-on: ubuntu-20.04
     steps:
@@ -478,8 +497,10 @@ jobs:
           env: dev
 
   publish-deploy-to-qa:
-    needs: publish-build-and-push
-    if: ${{ env.is_publish_task && success() }}
+    needs:
+     - publish-build-and-push
+     - publish-task
+    if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Update QA env
     environment: QA
     runs-on: ubuntu-20.04
