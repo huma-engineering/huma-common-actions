@@ -86,10 +86,6 @@ jobs:
       head_sha: ${{ steps.action.outputs.head_sha }}
       short_sha: ${{ steps.action.outputs.short_sha }}
     steps:
-      - run: |-
-          echo "1 -> ${{ needs.deploy-task.outputs && 'T' || 'F' }}"
-          echo "2 -> ${{ (needs.deploy-task.outputs.is_deploy == 'true') && 'T' || 'F' }}"
-          echo "3 -> ${{ needs.deploy-task.outputs.is_deploy }}"
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
         id: action
         if: ${{ github.event.issue.pull_request
