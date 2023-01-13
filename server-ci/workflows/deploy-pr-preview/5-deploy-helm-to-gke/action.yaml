@@ -124,7 +124,7 @@ runs:
     - name: Set error value
       id: error-value
       run: |-
-        error=${{ inputs.db_provider == 'atlas' && steps.helm_atlas.outputs.error || steps.helm_kubedb.outputs.error
+        error=${{ inputs.db_provider == 'atlas' && steps.helm_atlas.outputs.error || steps.helm_kubedb.outputs.error }}
         echo "::set-output name=error::$error"
       shell: bash
 
