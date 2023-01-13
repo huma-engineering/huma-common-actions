@@ -74,9 +74,13 @@ jobs:
 
   deploy-check:
     needs: deploy-task
-    name: Deploy command received
+    name: Check is /deploy or /rebuild
     runs-on: ubuntu-latest
     steps:
+      - run: |-
+          echo "1 -> ${{ needs.deploy-task.outputs && 'T' || 'F' }}"
+          echo "2 -> ${{ (needs.deploy-task.outputs.is_deploy == 'true') && 'T' || 'F' }}"
+          echo "3 -> ${{ needs.deploy-task.outputs.is_deploy }}"
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
         if: ${{ github.event.issue.pull_request
           && github.event.issue.state == 'open'
