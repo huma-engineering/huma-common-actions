@@ -1,0 +1,153 @@
+name: Do checks, show confirmation comment
+description: Do checks, show confirmation comment
+inputs:
+  cluster_name: { required: true, description: '' }
+  cluster_location: { required: true, description: '' }
+  include_sdk: { required: true, description: '' }
+  sdk_ref: { required: true, description: '' }
+  sdk_ssh_key: { required: true, description: '' }
+  gke_sa_key: { required: true, description: '' }
+  update_chart: { required: true, description: '' }
+  server_name: { required: true, description: '' }
+  grafana_host: { required: true, description: '' }
+  atlas_project_url: { required: true, description: '' }
+  atlas_project: { required: true, description: '' }
+  atlas_cluster: { required: true, description: '' }
+  app_namespace: { required: true, description: '' }
+  app_name: { required: true, description: '' }
+  db_user: { required: true, description: '' }
+  host_postfix: { required: true, description: '' }
+  db_provider: { required: true, description: '' }
+  bucket_provider: { required: true, description: '' }
+  issue_number: { required: true, description: '' }
+  head_sha: { required: true, description: '' }
+  dashboard_url: { required: true, description: '' }
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate to Google Cloud via a Service Account Key JSON
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ inputs.gke_sa_key }}
+
+    - name: Get the GKE credentials
+      uses: google-github-actions/get-gke-credentials@v0
+      with:
+        cluster_name: ${{ inputs.cluster_name }}
+        location: ${{ inputs.cluster_location }}
+
+    - name: Read bucket connection secret
+      id: bucket_secret
+      env:
+        namespace: ${{ inputs.app_namespace }}
+        secret: ${{ inputs.app_name }}-bucket-secret
+      run: |-
+        bucket=$(kubectl get -n $namespace secrets/$secret \
+          --template={{.data.bucket_name}} | base64 --decode)
+        region=$(kubectl get -n $namespace secrets/$secret \
+          --template={{.data.region}} | base64 --decode)
+        echo "::set-output name=bucket::$bucket"
+        echo "::set-output name=region::$region"
+      shell: bash
+
+    - name: Read DB connection secret
+      id: db_secret
+      env:
+        namespace: ${{ inputs.app_namespace }}
+        secret: ${{ inputs.db_user }}
+      run: |-
+        password=$(kubectl get -n $namespace secrets/$secret \
+          --template={{.data.password}} | base64 --decode)
+        username=$(kubectl get -n $namespace secrets/$secret \
+          --template={{.data.user}} | base64 --decode)
+        mongo_uri=$(kubectl get -n $namespace secrets/$secret \
+          --template={{.data.connectionString}} | base64 --decode)
+        echo "::add-mask::$password"
+        echo "::add-mask::$username"
+        echo "::add-mask::$mongo_uri"
+        echo "::set-output name=username::$username"
+        echo "::set-output name=password::$password"
+        echo "::set-output name=mongo_uri::$mongo_uri"
+      shell: bash
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.head_sha }}
+
+    - name: Clone Submodule
+      if: ${{ inputs.include_sdk }}
+      uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ inputs.sdk_ssh_key }}
+        repository: huma-engineering/huma-server-sdk
+        path: libs/huma-server-sdk
+        ref: ${{ inputs.sdk_ref }}
+
+    - name: Copy template file
+      shell: bash
+      run: cat ${{ github.action_path }}/pr-preview-comment.tpl >> ./pr-preview-comment-copy.tpl
+    - name: Render pr-preview-comment template
+      id: template
+      uses: chuhlomin/render-template@v1.6
+      with:
+        template: ./pr-preview-comment-copy.tpl
+        vars: |-
+          server_name: ${{ inputs.server_name}}
+          url: "https://${{ inputs.host_postfix }}"
+          mongo_express_url: ${{ format('"https://{0}/mongo-express/db/{1}"',
+            inputs.host_postfix, inputs.db_user) }}
+          mongo_uri: ${{ inputs.db_provider == 'kubedb' &&
+            format('"mongodb://{0}:{1}@{2}/{0}"',
+            inputs.db_user, steps.db_secret.outputs.password, inputs.host_postfix) ||
+            inputs.db_provider == 'atlas' && steps.db_secret.outputs.mongo_uri }}
+          username: ${{ steps.db_secret.outputs.username }}
+          password: ${{ steps.db_secret.outputs.password }}
+          bucket_uri: ${{ format('"{0}://{1}"', inputs.bucket_provider == 'gcs' && 'gs' || 's3',
+            steps.bucket_secret.outputs.bucket) }}
+          console_url: ${{ inputs.bucket_provider == 'gcs' &&
+            format('"[Google Cloud Console URL](https://console.cloud.google.com/storage/browser/{0})"',
+            steps.bucket_secret.outputs.bucket) ||
+            format('"[AWS Console URL](https://s3.console.aws.amazon.com/s3/buckets/{0}?region={1})"',
+            steps.bucket_secret.outputs.bucket, steps.bucket_secret.outputs.region) }}
+          dashboard_url: ${{ inputs.grafana_host }}${{ inputs.dashboard_url }}
+          atlas_warning: ${{ inputs.db_provider == 'atlas' &&
+            format('"- {0} `{1}` project [IP Access List]({2}#security/network/accessList)."',
+            '**Note:** for Atlas Mongo Shell your IP should be on the',
+            inputs.atlas_project, inputs.atlas_project_url) || '' }}
+          atlas_cp: ${{ inputs.db_provider == 'atlas' &&
+            format('"<br/>[Atlas Cluster control panel]({0}#clusters/detail/{1})."',
+            inputs.atlas_project_url, inputs.atlas_cluster) || '' }}
+    - name: Delete template file
+      shell: bash
+      run: rm ./pr-preview-comment-copy.tpl
+
+    - name: Put a ready to use comment
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ inputs.issue_number }}
+        body: |-
+          ${{ steps.template.outputs.result }}
+          [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+            github.server_url, github.repository, github.run_id) }})
+
+    - name: Put reaction on the command message
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        comment-id: ${{ github.event.comment.id }}
+        reactions: rocket
+
+    - uses: actions-ecosystem/action-add-labels@v1
+      with:
+        labels: deployed
+
+    - if: inputs.db_provider == 'atlas'
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        labels: deployed_atlas_mongodb
+
+    - if: inputs.bucket_provider == 'gcs'
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        labels: deployed_gcs_bucket

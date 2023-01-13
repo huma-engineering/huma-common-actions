@@ -1,0 +1,54 @@
+name: Package and upload the Helm chart
+description: Package and upload the helm chart package to ghcr
+author: Mohammad Asghari mohammad.asghari@huma.com
+branding:
+  color: 'blue'
+  icon: 'package'
+inputs:
+  head_sha: { required: true, description: 'Commit SHA' }
+  include_sdk: { required: true, description: 'False for dct, rpm, etc. True for sdk' }
+  sdk_ref: { required: false, description: string }
+  sdk_ssh_key: { required: false, description: 'SSH key to fetch sdk project' }
+  short_sha: { required: true, description: 'Short SHA' }
+  update_chart: { required: true, description: 'Whether update the chart or not' }
+outputs:
+  version:
+    description: The version of created chart
+    value: ${{ inputs.update_chart == true && steps.update.outputs.version || steps.skip.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.head_sha }}
+    - name: Clone Submodule
+      if: ${{ inputs.include_sdk }}
+      uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ inputs.sdk_ssh_key }}
+        repository: huma-engineering/huma-server-sdk
+        path: libs/huma-server-sdk
+        ref: ${{ inputs.sdk_ref }}
+    - name: 'Get chart version'
+      id: skip
+      run: |
+        echo "::set-output name=version::$(yq '.version' ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml)"
+      shell: bash
+
+    - name: Package and upload the chart
+      if: inputs.update_chart == true
+      id: update
+      env:
+        HELM_EXPERIMENTAL_OCI: "1"
+        path: ${{ github.action_path }}/../../deploy/charts/infrastructure/Chart.yaml
+        # tag: "-${{ inputs.short_sha }}"
+      working-directory: ${{ github.action_path }}/../../deploy/charts/infrastructure/
+      run: |
+        # yq '.version += strenv(tag)' -i ${path}
+        echo ${{ github.token }} |\
+          helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        mkdir -p ./.bin
+        helm package . -d ./.bin
+        helm push ./.bin/$(yq '.name' ${path})-$(yq '.version' ${path}).tgz oci://ghcr.io/huma-engineering/helm-charts
+        echo "::set-output name=version::$(yq '.version' ${path})"
+      shell: bash

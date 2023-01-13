@@ -1,0 +1,165 @@
+name: Do checks, show confirmation comment
+description: Do checks, show confirmation comment
+inputs:
+  app_name: { description: Application Deployment name, required: true }
+  atlas_cluster: { description: Atlas MongoDB Cluster name, required: false }
+  atlas_project: { description: Atlas Project name, required: false }
+  app_namespace: {description: Application namespace, required: true }
+  bucket_provider: { description: Object Storage provider, required: true }
+  chart_url: { description: Chart URL, required: true }
+  clean_workload: { description: Delete workload of compose-operator, not resources, default: "false", required: false }
+  cluster_name: { description: GKE cluster name, required: true }
+  db_provider: { description: MongoDB Cluster provider, required: true }
+  gcp_credentials: { description: GCP Service Account Key to deploy workload, required: true }
+  github_token: { description: A Github token PAT, required: true }
+  image_repository: { description: Image repository, required: true }
+  image_tag_format: { description: Image tag format, SHA for short_sha, default: latest, required: false }
+  kubedb_namespace: { description: KubeDB MongoDB Cluster Namespace, required: false }
+  kubedb_cluster: { description: KubeDB MongoDB Cluster name, required: false }
+  location: { description: GKE zone, required: true }
+  version: { description: Chart version, required: true }
+  helm_extra_values_file: { description: Custom values file, required: true }
+  server_extra_config_file: { description: Extra server config, required: true }
+  py_path_in_docker: { description: The python execution path inside docker, e.g. /apps/dct_server.py, required: true }
+  short_sha: { description: Git short_sha, required: true }
+  head_sha: { description: Git head_sha, required: true }
+  issue_number: { required: true, description: PR number }
+  chart_version: { required: true, description: Helm chart version in GHCR }
+  is_deploy: { required: true, description: Showing if command is /deploy }
+  grafana_api_key: { required: true, description: API key for grafana }
+
+outputs:
+  error:
+    description: The error code of operation, 0 means success
+    value: ${{ steps.error-value.outputs.error }}
+  dashboard_url:
+    description: Grafana dashboard url
+    value: ${{ steps.dashboard.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.head_sha }}
+
+    - name: Authenticate to Google Cloud via a Service Account Key JSON
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ inputs.gcp_credentials }}
+
+    - name: Get the GKE credentials
+      uses: google-github-actions/get-gke-credentials@v0
+      with:
+        cluster_name: ${{ inputs.cluster_name }}
+        location: ${{ inputs.location }}
+
+    - name: Delete all workload of compose-operator kind, but not resources
+      if: inputs.clean_workload == 'true'
+      run: |-
+        kubectl delete applicationcomposition --all=true -n ${{ inputs.app_namespace }}
+        kubectl delete application --all=true -n ${{ inputs.app_namespace }}
+      shell: bash
+
+    - name: Merge config-base.yaml and input.server_extra_config_file
+      run: |-
+        yq eval-all '. as $item ireduce ({}; . * $item)' \
+          ${{ github.action_path }}/../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \
+          ${{ inputs.server_extra_config_file }} >> config.yaml
+      shell: bash
+    # ref: https://helm.sh/docs/topics/registries/
+    - name: Deploy a Helm chart
+      id: helm_kubedb
+      if: inputs.db_provider == 'kubedb'
+      env:
+        HELM_EXPERIMENTAL_OCI: "1"
+      run: |-
+        echo ${{ inputs.github_token }} |\
+          helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        tag_format=${{ inputs.image_tag_format}}
+        tag="${tag_format/SHA/"${{ inputs.short_sha }}"}"
+        helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
+          -i --create-namespace -n ${{ inputs.app_namespace }} \
+          -f ${{ inputs.helm_extra_values_file }} \
+          --version ${{ inputs.version }} \
+          --set server.py_path_in_docker=${{ inputs.py_path_in_docker }} \
+          --set server.image=${{ inputs.image_repository }} \
+          --set server.tag=$tag \
+          --set fullnameOverride=${{ inputs.app_name }} \
+          --set mongodb.kubedb.clusterRef.name=${{ inputs.kubedb_cluster }} \
+          --set mongodb.kubedb.clusterRef.namespace=${{ inputs.kubedb_namespace }} \
+          --set mongodb.provider=${{ inputs.db_provider }} \
+          --set bucket.provider=${{ inputs.bucket_provider }} \
+          && error=0 || error=$?
+        echo "::set-output name=error::$error"
+      shell: bash
+
+    - name: Deploy a Helm chart
+      id: helm_atlas
+      if: inputs.db_provider == 'atlas'
+      env:
+        HELM_EXPERIMENTAL_OCI: "1"
+      run: |-
+        echo ${{ inputs.github_token }} |\
+          helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+        tag_format=${{ inputs.image_tag_format}}
+        tag="${tag_format/SHA/"${{ inputs.short_sha }}"}"
+        helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
+          -i --create-namespace -n ${{ inputs.app_namespace }} \
+          -f ${{ inputs.helm_extra_values_file }} \
+          --version ${{ inputs.version }} \
+          --set server.py_path_in_docker=${{ inputs.py_path_in_docker }} \
+          --set server.image=${{ inputs.image_repository }} \
+          --set server.tag=$tag \
+          --set fullnameOverride=${{ inputs.app_name }} \
+          --set mongodb.atlas.clusterName=${{ inputs.atlas_cluster }} \
+          --set mongodb.atlas.projectName=${{ inputs.atlas_project }} \
+          --set mongodb.provider=${{ inputs.db_provider }} \
+          --set bucket.provider=${{ inputs.bucket_provider }} \
+          && error=0 || error=$?
+        echo "::set-output name=error::$error"
+      shell: bash
+
+    - name: Set error value
+      id: error-value
+      run: |-
+        error=${{ inputs.db_provider == 'atlas' && steps.helm_atlas.outputs.error || steps.helm_kubedb.outputs.error
+        echo "::set-output name=error::$error"
+      shell: bash
+
+    - name: Create Grafana logs dashboard
+      id: dashboard
+      if: inputs.is_deploy == 'true' && steps.error-value.outputs.error == 0
+      uses: huma-engineering/huma-github-actions/create-grafana-logs-dashboard@v0.14.0
+      with:
+        app_name: ${{ inputs.app_name }}
+        app_namespace: ${{ inputs.app_namespace }}
+        cluster_name: ${{ inputs.grafana_cluster_name }}
+        grafana_api_key: ${{ inputs.grafana_api_key }}
+        grafana_host: ${{ inputs.grafana_host }}
+
+    - name: Report on deploy success
+      if: steps.error-value.outputs.error == 0
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ inputs.issue_number }}
+        body: |-
+          Deployed a new version of the ${{ inputs.server_name }} container built from the commit ${{
+            inputs.head_sha }}, the helm chart version `${{ inputs.chart_version }}`.👌
+          Created the connected storage bucket, database and cache.
+          Created a new [Grafana dashboard with ${{ inputs.server_name }} logs](${{ inputs.grafana_host }}${{
+            steps.dashboard.outputs.url }}).
+          [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id) }})
+
+    - name: Report on deploy failure
+      if: steps.error-value.outputs.error != 0
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ inputs.issue_number }}
+        body: |-
+          Failed to deploy a new version of the ${{ inputs.server_name }} container built from the commit ${{
+            inputs.head_sha }}, the helm chart version `${{ inputs.chart_version }}`.❌
+          [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+            github.server_url, github.repository, github.run_id) }})

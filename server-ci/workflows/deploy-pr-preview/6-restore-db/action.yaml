@@ -1,0 +1,57 @@
+name: Do checks, show confirmation comment
+description: Do checks, show confirmation comment
+inputs:
+  issue_number: { required: true, description: '' }
+  app_namespace: { required: true, description: '' }
+  full_db_dump_prefix: { required: true, description: '' }
+  source_db_name: { required: true, description: '' }
+  source_gcs_bucket: { required: true, description: '' }
+  db_dump_bucket_name: { required: true, description: '' }
+  cluster_name: { required: true, description: '' }
+  db_provider: { required: true, description: '' }
+  db_user: { required: true, description: '' }
+  cluster_location: { required: true, description: '' }
+  gke_sa_key: { required: true, description: '' }
+
+outputs:
+  error:
+    description: 'The error code of restore, zero for success'
+    value: ${{ steps.restore.outputs.error }}
+
+runs:
+  using: composite
+  steps:
+    - name: Restore MongoDB dump
+      id: restore
+      uses: huma-engineering/huma-github-actions/restore-mongodb-archived-db@v0.19.0
+      with:
+        app_namespace: ${{ inputs.app_namespace }}
+        archive_name: ${{ format('{0}dump_hs_sandbox_{1}.gz',
+          inputs.full_db_dump_prefix, inputs.source_db_name) }}
+        bucket_name: ${{ inputs.db_dump_bucket_name }}
+        cluster_name: ${{ inputs.cluster_name }}
+        db_provider: ${{ inputs.db_provider }}
+        db_user: ${{ inputs.db_user }}
+        gcp_credentials: ${{ inputs.GKE_SA_KEY }}
+        location: ${{ inputs.cluster_location }}
+        restore_options: ${{ inputs.full_db_dump_prefix != '' && '--numInsertionWorkersPerCollection=2' || '' }}
+        source_db_name: ${{ inputs.source_db_name }}
+        rename_bucket: ${{ inputs.source_gcs_bucket }}
+
+    - name: Report on restore-db success
+      if: ${{ steps.restore.outputs.error == 0 }}
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ inputs.issue_number }}
+        body: |-
+          Restored the latest snapshot of application database.👌
+          Your MongoDB provider is ${{ inputs.db_provider == 'atlas' && 'Atlas' || 'KubeDB' }}.
+
+    - name: Report on restore-db failure
+      if: ${{ steps.restore.outputs.error != 0 }}
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ inputs.issue_number }}
+        body: |-
+          Failed to restore application database snapshot.❌
+          Your MongoDB provider is ${{ inputs.db_provider == 'atlas' && 'Atlas' || 'KubeDB' }}.

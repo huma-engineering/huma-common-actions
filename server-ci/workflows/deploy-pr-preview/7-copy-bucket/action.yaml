@@ -1,0 +1,82 @@
+name: Do checks, show confirmation comment
+description: Do checks, show confirmation comment
+inputs:
+  cluster_name: { required: true, description: '' }
+  location: { required: true, description: '' }
+  app_namespace: { required: true, description: '' }
+  app_name: { required: true, description: '' }
+  gcp_credentials: { required: true, description: '' }
+  source_bucket: { required: true, description: '' }
+  aws_access_key_id: { required: true, description: '' }
+  aws_secret_access_key: { required: true, description: '' }
+  aws_region: { required: true, description: '' }
+  bucket_provider: { required: true, description: '' }
+  issue_number: { required: true, description: '' }
+  source_gcs_bucket: { required: true, description: '' }
+
+outputs:
+  error:
+    description: 'Error code of the whole operation'
+    value: ${{ inputs.bucket_provider == 'gcs' && steps.sync_gcs.outputs.error || steps.sync_s3.outputs.error }}
+
+runs:
+  using: composite
+  steps:
+      - name: Clone the selected source bucket to a new S3 bucket
+        id: sync_s3
+        if: inputs.bucket_provider == 's3'
+        uses: huma-engineering/huma-github-actions/sync-s3-bucket-snapshot-to-composed-bucket@v0.15.0
+        with:
+          cluster_name: ${{ inputs.cluster_name }}
+          location: ${{ inputs.cluster_location }}
+          app_namespace: ${{ inputs.app_namespace }}
+          secret_name: ${{ inputs.app_name }}-bucket-secret
+          gcp_credentials: ${{ inputs.gcp_credentials }}
+          source_bucket: ${{ inputs.source_bucket }}
+          aws_access_key_id: ${{ inputs.aws_access_key_id }}
+          aws_secret_access_key: ${{ inputs.aws_secret_access_key }}
+          aws_region: ${{ inputs.aws_region }}
+
+      - name: Report on clone S3 bucket success
+        if: inputs.bucket_provider == 's3' && steps.sync_s3.outputs.error == 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ inputs.issue_number }}
+          body: |-
+            Synced an existing snapshot S3 bucket to a composed bucket.👌
+
+      - name: Report on clone S3 bucket failure
+        if: inputs.bucket_provider == 's3' && steps.sync_s3.outputs.error != 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ inputs.issue_number }}
+          body: |-
+            Failed to sync an existing snapshot S3 bucket to a composed bucket.❌
+
+      - name: Clone the selected source bucket to a new GSC bucket
+        id: sync_gcs
+        if: inputs.bucket_provider == 'gcs'
+        uses: huma-engineering/huma-github-actions/clone-gcs-buckets@v0.18.0
+        with:
+          app_namespace: ${{ inputs.app_namespace }}
+          cluster_name: ${{ inputs.cluster_name }}
+          destination_bucket: ${{ inputs.app_name }}-bucket
+          gcp_credentials: ${{ inputs.gcp_credentials }}
+          location: ${{ inputs.cluster_location }}
+          source_bucket: ${{ inputs.source_gcs_bucket }}
+
+      - name: Report on clone GCS bucket success
+        if: inputs.bucket_provider == 'gcs' && steps.sync_gcs.outputs.error == 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ inputs.issue_number }}
+          body: |-
+            Cloned the selected source bucket to a new GSC bucket.👌
+
+      - name: Report on clone GCS bucket failure
+        if: inputs.bucket_provider == 'gcs' && steps.sync_gcs.outputs.error != 0
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ inputs.issue_number }}
+          body: |-
+            Failed to clone the selected source bucket to a new GSC bucket.❌

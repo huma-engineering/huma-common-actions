@@ -1,0 +1,25 @@
+name: Step 1 to define the task
+description: Step 1 to define what the task is
+inputs:
+  must_build: { required: true, description: ''}
+
+outputs:
+  is_deploy:
+    description: 'Showing if it is /deploy'
+    value: ${{ steps.check.outputs.is_deploy }}
+  is_rebuild:
+    description: 'Showing if it is /rebuild'
+    value: ${{ steps.check.outputs.is_rebuild }}
+  must_build:
+    description: 'Showing if we must build the project or not'
+    value: ${{ steps.check.outputs.must_build }}
+
+runs:
+  using: composite
+  steps:
+    - id: check
+      run: |-
+        echo "::set-output name=is_deploy::${{ startsWith(github.event.comment.body, '/deploy') && 'true' || 'false' }}"
+        echo "::set-output name=is_rebuild::${{ startsWith(github.event.comment.body, '/rebuild') && 'true' || 'false' }}"
+        echo "::set-output name=must_build::${{ inputs.must_build }}"
+      shell: bash

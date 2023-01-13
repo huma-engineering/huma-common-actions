@@ -1,0 +1,60 @@
+name: Do checks, show confirmation comment
+description: Do checks, show confirmation comment
+inputs:
+  issue_number: { required: true, description: '' }
+  is_deployed: { required: true, description: '' }
+  is_rebuild: { required: true, description: '' }
+
+outputs:
+  head_ref:
+    description: 'Head_ref of the comment'
+    value: ${{ steps.comment-branch.outputs.head_ref }}
+  head_sha:
+    description: 'Head_sha of the comment'
+    value: ${{ steps.comment-branch.outputs.head_sha }}
+  short_sha:
+    description: 'Short_sha of the commit'
+    value: ${{ steps.sha.outputs.short_sha }}
+
+runs:
+  using: composite
+  steps:
+    - uses: xt0rted/pull-request-comment-branch@v1
+      id: comment-branch
+
+    - id: sha
+      name: Get the short of Github commit SHA
+      run: |-
+        SHORT_SHA=$(echo ${{ steps.comment-branch.outputs.head_sha }} | cut -c1-7)
+        echo "::set-output name=short_sha::$SHORT_SHA"
+      shell: bash
+
+    - name: Put reaction on the command message
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        comment-id: ${{ github.event.comment.id }}
+        reactions: eyes
+
+    - name: Describe the command to perform
+      if: inputs.is_deployed == 'true'
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ inputs.issue_number }}
+        body: |-
+          Executing the command: `/deploy ${{ format('{0} {1} {2}{3}{4}',
+          contains(github.event.comment.body, '--env=qa') && '--env=qa' || '--env=dev',
+          contains(github.event.comment.body, '--mongodb=atlas') && '--mongodb=atlas' || '--mongodb=kubedb',
+          contains(github.event.comment.body, '--storage=gcs') && '--storage=gcs' || '--storage=s3',
+          contains(github.event.comment.body, '--db-full') && ' --db-full' || '',
+          contains(github.event.comment.body, '--update-chart') && ' --update-chart' || '') }}`
+          [The corresponding Github CI workflow run](${{ format('{0}/{1}/actions/runs/{2}',
+            github.server_url, github.repository, github.run_id) }})
+
+    - name: create a comment before exit
+      if: inputs.is_rebuild == 'true' && !contains(github.event.issue.labels.*.name, 'deployed')
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        issue-number: ${{ github.event.issue.number }}
+        body: |-
+          This PR don't have a preview deployment yet.❌
+          Please use a `/deploy` command first to create one.💡
