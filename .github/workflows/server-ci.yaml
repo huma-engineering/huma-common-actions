@@ -6,14 +6,14 @@ on:
       server_name: { required: true, type: string }
       include_sdk: { required: true, type: boolean }
       sdk_ref: { required: false, type: string }
-      cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
-      cluster_location: { required: false, type: string, default: 'europe-west2' }
-      atlas_cluster: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview' }
-      atlas_project: { required: false, type: string, default: 'hu-sandbox' }
-      atlas_project_url: { required: false, type: string, default: 'https://cloud.mongodb.com/v2/5f1313011621fe3c7268a8b1' }
-      db_dump_bucket_name: { required: false, type: string, default: 'hu-europe2-github-action-pr-preview-bucket' }
+      cluster_name: { required: false, type: string }
+      cluster_location: { required: false, type: string }
+      atlas_cluster: { required: false, type: string }
+      atlas_project: { required: false, type: string }
+      atlas_project_url: { required: false, type: string }
+      db_dump_bucket_name: { required: false, type: string }
       kubedb_cluster: { required: true, type: string }
-      kubedb_namespace: { required: false, type: string, default: 'kubedb' }
+      kubedb_namespace: { required: false, type: string }
       grafana_host: { required: true, type: string }
       grafana_cluster_name: { required: true, type: string }
       host_postfix: { required: true, type: string }
@@ -22,7 +22,7 @@ on:
       source_s3_bucket_qa: { required: true, type: string }
       source_s3_bucket_dev: { required: true, type: string }
       make_upload_chart_command: { required: true, type: string }
-      aws_region: { required: false, type: string, default: 'eu-west-2' }
+      aws_region: { required: false, type: string }
       dockerfile: { required: true, type: string }
       make_build_push_ghcr: { required: true, type: string }
       docker_image_name: { required: true, type: string, description: 'Docker image name of make file' }
@@ -112,6 +112,7 @@ jobs:
       - deploy-check
       - deploy-task
     name: Build and Push Container
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/4-build@HCA-NA-add-huma-server-actions
         with:
@@ -134,6 +135,7 @@ jobs:
     outputs:
       dashboard_url: ${{ steps.deploy.outputs.dashboard_url }}
       error: ${{ steps.deploy.outputs.error }}
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/5-depoy-helm-to-gke@HCA-NA-add-huma-server-actions
         id: deploy
@@ -173,6 +175,7 @@ jobs:
     if: needs.deploy-task.outputs.is_deploy == 'true'
     outputs:
       error: ${{ steps.restore.outputs.error }}
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/6-restore-db@HCA-NA-add-huma-server-actions
         id: restore
@@ -197,6 +200,7 @@ jobs:
     if: needs.deploy-task.outputs.is_deploy == 'true'
     outputs:
       error: ${{ steps.copy-bucket.outputs.error }}
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/7-copy-bucket@HCA-NA-add-huma-server-actions
         id: copy-bucket
@@ -227,6 +231,7 @@ jobs:
       - deploy-task
       - deploy-check
       - deploy-deploy
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/8-report@HCA-NA-add-huma-server-actions
         with:
