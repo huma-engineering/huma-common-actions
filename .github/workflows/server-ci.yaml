@@ -67,8 +67,13 @@ jobs:
   deploy-task:
     name: Check if this flow must be run at all or not
     runs-on: ubuntu-latest
+    outputs:
+      is_deploy: ${{ steps.action.outputs.is_deploy }}
+      is_rebuild: ${{ steps.action.outputs.is_rebuild }}
+      must_build: ${{ steps.action.outputs.must_build }}
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/1-task@HCA-NA-add-huma-server-actions
+        id: action
         with:
           must_build: ${{ env.must_build }}
 
@@ -76,12 +81,17 @@ jobs:
     needs: deploy-task
     name: Check is /deploy or /rebuild
     runs-on: ubuntu-latest
+    outputs:
+      head_ref: ${{ steps.action.outputs.head_ref }}
+      head_sha: ${{ steps.action.outputs.head_sha }}
+      short_sha: ${{ steps.action.outputs.short_sha }}
     steps:
       - run: |-
           echo "1 -> ${{ needs.deploy-task.outputs && 'T' || 'F' }}"
           echo "2 -> ${{ (needs.deploy-task.outputs.is_deploy == 'true') && 'T' || 'F' }}"
           echo "3 -> ${{ needs.deploy-task.outputs.is_deploy }}"
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
+        id: action
         if: ${{ github.event.issue.pull_request
           && github.event.issue.state == 'open'
           && (needs.deploy-task.outputs.is_deploy == 'true' || needs.deploy-task.outputs.is_rebuild == 'true') }}
