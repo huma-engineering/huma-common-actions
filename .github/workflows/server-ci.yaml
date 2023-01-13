@@ -151,7 +151,7 @@ jobs:
       error: ${{ steps.deploy.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/5-depoy-helm-to-gke@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/5-deploy-helm-to-gke@HCA-NA-add-huma-server-actions
         id: deploy
         with:
           app_name: ${{ env.app_name }}
