@@ -2,7 +2,7 @@ name: Do checks, show confirmation comment
 description: Do checks, show confirmation comment
 inputs:
   cluster_name: { required: true, description: '' }
-  location: { required: true, description: '' }
+  cluster_location: { required: true, description: '' }
   app_namespace: { required: true, description: '' }
   app_name: { required: true, description: '' }
   gcp_credentials: { required: true, description: '' }

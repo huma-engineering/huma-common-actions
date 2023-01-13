@@ -216,7 +216,7 @@ jobs:
         id: copy-bucket
         with:
           cluster_name: ${{ inputs.cluster_name }}
-          location: ${{ inputs.cluster_location }}
+          cluster_location: ${{ inputs.cluster_location }}
           app_namespace: ${{ env.app_namespace }}
           app_name: ${{ env.app_name }}
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
