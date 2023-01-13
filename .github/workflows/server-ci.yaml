@@ -71,6 +71,7 @@ jobs:
       is_deploy: ${{ steps.action.outputs.is_deploy }}
       is_rebuild: ${{ steps.action.outputs.is_rebuild }}
       must_build: ${{ steps.action.outputs.must_build }}
+      is_deploy_flow: ${{ steps.action.outputs.is_deploy_flow }}
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/1-task@HCA-NA-add-huma-server-actions
         id: action
@@ -78,6 +79,7 @@ jobs:
           must_build: ${{ env.must_build }}
 
   deploy-check:
+    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' }}
     needs: deploy-task
     name: Check is /deploy or /rebuild
     runs-on: ubuntu-latest
@@ -89,8 +91,7 @@ jobs:
       - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
         id: action
         if: ${{ github.event.issue.pull_request
-          && github.event.issue.state == 'open'
-          && (needs.deploy-task.outputs.is_deploy == 'true' || needs.deploy-task.outputs.is_rebuild == 'true') }}
+          && github.event.issue.state == 'open' }}
         with:
           issue_number: ${{ env.issue_number }}
           is_deployed: ${{ needs.deploy-task.outputs.is_deploy }}
@@ -101,6 +102,7 @@ jobs:
     needs:
       - deploy-check
       - deploy-task
+    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.helm.outputs.version }}
@@ -117,7 +119,8 @@ jobs:
           update_chart: ${{ env.update_chart }}
 
   deploy-build:
-    if: needs.deploy-task.outputs.must_build == 'true'
+    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' &&
+      needs.deploy-task.outputs.must_build == 'true' }}
     needs:
       - deploy-check
       - deploy-task
@@ -141,7 +144,8 @@ jobs:
       - deploy-check
       - deploy-chart
       - deploy-task
-    if: needs.deploy-task.outputs.must_build == 'true'
+    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' &&
+      needs.deploy-task.outputs.must_build == 'true' }}
     outputs:
       dashboard_url: ${{ steps.deploy.outputs.dashboard_url }}
       error: ${{ steps.deploy.outputs.error }}
@@ -182,7 +186,7 @@ jobs:
     needs:
      - deploy-deploy
      - deploy-task
-    if: needs.deploy-task.outputs.is_deploy == 'true'
+    if: ${{ needs.deploy-task.outputs.is_deploy == 'true' }}
     outputs:
       error: ${{ steps.restore.outputs.error }}
     runs-on: ubuntu-latest
@@ -207,7 +211,7 @@ jobs:
     needs:
      - deploy-deploy
      - deploy-task
-    if: needs.deploy-task.outputs.is_deploy == 'true'
+    if: ${{ needs.deploy-task.outputs.is_deploy == 'true' }}
     outputs:
       error: ${{ steps.copy-bucket.outputs.error }}
     runs-on: ubuntu-latest

@@ -13,6 +13,10 @@ outputs:
   must_build:
     description: 'Showing if we must build the project or not'
     value: ${{ steps.check.outputs.must_build }}
+  is_deploy_flow:
+    description: 'Showing if the deploy flow must be called or not'
+    value: ${{
+      (steps.check.outputs.is_deploy == 'true' || steps.check.outputs.is_rebuild == 'true') && 'true' || 'false' }}
 
 runs:
   using: composite
