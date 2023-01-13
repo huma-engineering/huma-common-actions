@@ -16,7 +16,7 @@ on:
       kubedb_namespace: { required: false, type: string }
       grafana_host: { required: true, type: string }
       grafana_cluster_name: { required: true, type: string }
-      host_postfix: { required: true, type: string, default: 'sbx.huma.com' }
+      host_postfix: { required: false, type: string, default: 'sbx.huma.com' }
       source_gcs_bucket_qa: { required: true, type: string }
       source_gcs_bucket_dev: { required: true, type: string }
       source_s3_bucket_qa: { required: true, type: string }
