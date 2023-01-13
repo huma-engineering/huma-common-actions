@@ -75,7 +75,7 @@ env:
       secrets.MONGO_PRE_PROD_USER_NAME,
       secrets.MONGO_PRE_PROD_USER_PWD,
       secrets.MONGO_PRE_PROD_HOST,
-      inputs.dev_mongo_db_name
+      inputs.qa_mongo_db_name
     ) }}
   is_publish_task: ${{ github.event_name == 'push' &&
     (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')) }}
