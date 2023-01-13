@@ -1,0 +1,282 @@
+name: Mega pipeline
+
+on:
+  workflow_call:
+    inputs:
+      server_name: { required: true, type: string }
+      include_sdk: { required: true, type: boolean }
+      sdk_ref: { required: false, type: string }
+      cluster_name: { required: false, type: string }
+      cluster_location: { required: false, type: string }
+      atlas_cluster: { required: false, type: string }
+      atlas_project: { required: false, type: string }
+      atlas_project_url: { required: false, type: string }
+      db_dump_bucket_name: { required: false, type: string }
+      kubedb_cluster: { required: true, type: string }
+      kubedb_namespace: { required: false, type: string }
+      grafana_host: { required: true, type: string }
+      grafana_cluster_name: { required: true, type: string }
+      host_postfix: { required: true, type: string }
+      source_gcs_bucket_qa: { required: true, type: string }
+      source_gcs_bucket_dev: { required: true, type: string }
+      source_s3_bucket_qa: { required: true, type: string }
+      source_s3_bucket_dev: { required: true, type: string }
+      make_upload_chart_command: { required: true, type: string }
+      aws_region: { required: false, type: string }
+      dockerfile: { required: true, type: string }
+      make_build_push_ghcr: { required: true, type: string }
+      docker_image_name: { required: true, type: string, description: 'Docker image name of make file' }
+      docker_temp_tag_format: { required: true, type: string, description: 'Docker tag format in PRs' }
+      helm_extra_values_file: { required: true, type: string }
+      server_extra_config_file: { required: true, type: string }
+
+env:
+  must_build: ${{
+    startsWith(github.event.comment.body, '/deploy') ||
+    (startsWith(github.event.comment.body, '/rebuild') &&
+    contains(github.event.issue.labels.*.name, 'deployed')) }}
+  app_name: ${{ inputs.server_name }}-${{ github.event.issue.number }}
+  app_namespace: pr-preview-${{ inputs.server_name }}-${{ github.event.issue.number }}
+  bucket_provider: ${{
+    (startsWith(github.event.comment.body, '/deploy') &&
+    (contains(github.event.comment.body, '--storage=gcs') && 'gcs' || 's3')) ||
+    (startsWith(github.event.comment.body, '/rebuild') &&
+    (contains(github.event.issue.labels.*.name, 'deployed_gcs_bucket') && 'gcs' || 's3')) }}
+  db_provider: ${{
+    (startsWith(github.event.comment.body, '/deploy') &&
+    (contains(github.event.comment.body, '--mongodb=atlas') && 'atlas' || 'kubedb')) ||
+    (startsWith(github.event.comment.body, '/rebuild') &&
+    (contains(github.event.issue.labels.*.name, 'deployed_atlas_mongodb') && 'atlas' || 'kubedb')) }}
+  db_user: ${{ inputs.server_name }}-${{ github.event.issue.number }}-db
+  full_db_dump_prefix: ${{ contains(github.event.comment.body, '--db-full') && 'full_' || '' }}
+  host_postfix: ${{ inputs.server_name }}-${{ github.event.issue.number }}.${{ inputs.host_postfix }}
+  source_db_name: ${{ contains(github.event.comment.body, '--env=qa') && 'pp_qa' || 'pp_dev' }}
+  source_gcs_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
+    inputs.source_gcs_bucket_qa || inputs.source_gcs_bucket_dev }}
+  source_s3_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
+    inputs.source_s3_bucket_qa || inputs.source_s3_bucket_dev }}
+  update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
+  helm_chart_path: ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml
+  issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
+            github.event.pull_request.number }}
+  # issue_number: ${{ github.event.issue.number }}
+
+# yamllint disable rule:line-length
+jobs:
+  # /deploy and /rebuild flow
+  deploy-task:
+    name: Check if this flow must be run at all or not
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/1-task@HCA-NA-add-huma-server-actions
+        with:
+          must_build: ${{ env.must_build }}
+
+  deploy-check:
+    needs: deploy-task
+    name: Check is /deploy or /rebuild
+    runs-on: ubuntu-latest
+    steps:
+      - run: |-
+          echo "1 -> ${{ needs.deploy-task.outputs && 'T' || 'F' }}"
+          echo "2 -> ${{ (needs.deploy-task.outputs.is_deploy == 'true') && 'T' || 'F' }}"
+          echo "3 -> ${{ needs.deploy-task.outputs.is_deploy }}"
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
+        if: ${{ github.event.issue.pull_request
+          && github.event.issue.state == 'open'
+          && (needs.deploy-task.outputs.is_deploy == 'true' || needs.deploy-task.outputs.is_rebuild == 'true') }}
+        with:
+          issue_number: ${{ env.issue_number }}
+          is_deployed: ${{ needs.deploy-task.outputs.is_deploy }}
+          is_rebuild: ${{ needs.deploy-task.outputs.is_rebuild }}
+
+  deploy-chart:
+    name: Package and upload the Helm chart
+    needs:
+      - deploy-check
+      - deploy-task
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.helm.outputs.version }}
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/3-package-upload-helm-chart@HCA-NA-add-huma-server-actions
+        name: Deploy the Helm chart to GKE
+        id: helm
+        with:
+          head_sha: ${{ needs.deploy-check.outputs.head_sha }}
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ref: ${{ inputs.sdk_ref }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          short_sha: ${{ needs.deploy-check.outputs.short_sha }}
+          update_chart: ${{ env.update_chart }}
+
+  deploy-build:
+    if: needs.deploy-task.outputs.must_build == 'true'
+    needs:
+      - deploy-check
+      - deploy-task
+    name: Build and Push Container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/4-build@HCA-NA-add-huma-server-actions
+        with:
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ref: ${{ inputs.sdk_ref }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          make_build_push_ghcr: ${{ inputs.make_build_push_ghcr }}
+          issue_number: ${{ env.issue_number }}
+          head_sha: needs.deploy-check.outputs.head_sha
+          head_ref: needs.deploy-check.outputs.head_ref
+
+  deploy-deploy:
+    name: Deploy the infrastructure Helm chart to GKE
+    needs:
+      - deploy-check
+      - deploy-chart
+      - deploy-task
+    if: needs.deploy-task.outputs.must_build == 'true'
+    outputs:
+      dashboard_url: ${{ steps.deploy.outputs.dashboard_url }}
+      error: ${{ steps.deploy.outputs.error }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/5-depoy-helm-to-gke@HCA-NA-add-huma-server-actions
+        id: deploy
+        with:
+          app_name: ${{ env.app_name }}
+          atlas_cluster: ${{ inputs.atlas_cluster }}
+          atlas_project: ${{ inputs.atlas_project }}
+          app_namespace: ${{ env.app_namespace }}
+          bucket_provider: ${{ env.bucket_provider }}
+          chart_url: oci://ghcr.io/huma-engineering/helm-charts/huma-backend-requisites
+          clean_workload: "true"
+          cluster_name: ${{ inputs.cluster_name }}
+          db_provider: ${{ env.db_provider }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          image_repository: ghcr.io/huma-engineering/${{ inputs.docker_image_name }}
+          image_tag_format: ${{ inputs.docker_temp_tag_format }}
+          kubedb_namespace: ${{ inputs.kubedb_namespace }}
+          kubedb_cluster: ${{ inputs.kubedb_cluster }}
+          location: ${{ inputs.cluster_location }}
+          version: ${{ needs.deploy-chart.outputs.version }}
+          helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
+          server_extra_config_file: ${{ inputs.server_extra_config_file }}
+          py_path_in_docker: /server/dct_server.py
+          short_sha: ${{ needs.deploy-check.outputs.short_sha }}
+          issue_number: ${{ env.issue_number }}
+          head_sha: ${{ needs.deploy-check.outputs.head_sha }}
+          chart_version: ${{ needs.deploy-chart.outputs.version }}
+          is_deployed: ${{ needs.deploy-task.outputs.is_deploy }}
+          grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
+
+  deploy-restore-db:
+    name: Restore MongoDB dump
+    needs:
+     - deploy-deploy
+     - deploy-task
+    if: needs.deploy-task.outputs.is_deploy == 'true'
+    outputs:
+      error: ${{ steps.restore.outputs.error }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/6-restore-db@HCA-NA-add-huma-server-actions
+        id: restore
+        with:
+          issue_number: ${{ env.issue_number }}
+          app_namespace: ${{ env.app_namespace }}
+          full_db_dump_prefix: ${{ env.full_db_dump_prefix }}
+          source_db_name: ${{ env.source_db_name }}
+          source_gcs_bucket: ${{ env.source_gcs_bucket }}
+          db_dump_bucket_name: ${{ inputs.db_dump_bucket_name }}
+          cluster_name: ${{ inputs.cluster_name }}
+          db_provider: ${{ env.db_provider }}
+          db_user: ${{ env.db_user }}
+          cluster_location: ${{ inputs.cluster_location }}
+          gke_sa_key: ${{ secrets.GKE_SA_KEY }}
+
+  deploy-copy-bucket:
+    name: Clone the selected source bucket to a new GCS or S3 bucket
+    needs:
+     - deploy-deploy
+     - deploy-task
+    if: needs.deploy-task.outputs.is_deploy == 'true'
+    outputs:
+      error: ${{ steps.copy-bucket.outputs.error }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/7-copy-bucket@HCA-NA-add-huma-server-actions
+        id: copy-bucket
+        with:
+          cluster_name: ${{ inputs.cluster_name }}
+          location: ${{ inputs.cluster_location }}
+          app_namespace: ${{ env.app_namespace }}
+          app_name: ${{ env.app_name }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          source_bucket: ${{ env.source_s3_bucket }}
+          aws_access_key_id: ${{ secrets.PR_PREVIEW_AWS_HUMA_SANDBOX_IAM_USER_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.PR_PREVIEW_AWS_HUMA_SANDBOX_IAM_USER_SECRET_KEY }}
+          aws_region: ${{ inputs.aws_region }}
+          bucket_provider: ${{ env.bucket_provider }}
+          issue_number: ${{ env.issue_number }}
+          source_gcs_bucket: ${{ env.source_gcs_bucket }}
+
+  deploy-report:
+    if: ${{ needs.deploy-task.outputs.is_deploy == 'true' &&
+      needs.deploy-deploy.outputs.error == 0 &&
+      needs.deploy-restore-db.outputs.error == 0 &&
+      needs.deploy-copy-bucket.outputs.error == 0 }}
+    name: Send a preview URL to user
+    needs:
+      - deploy-build
+      - deploy-restore-db
+      - deploy-copy-bucket
+      - deploy-task
+      - deploy-check
+      - deploy-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/8-report@HCA-NA-add-huma-server-actions
+        with:
+          cluster_name: ${{ inputs.cluster_name }}
+          cluster_location: ${{ inputs.cluster_location }}
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ref: ${{ inputs.sdk_ref }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK  }}
+          gke_sa_key: ${{ secrets.GKE_SA_KEY }}
+          update_chart: ${{ inputs.update_chart }}
+          server_name: ${{ inputs.server_name }}
+          grafana_host: ${{ inputs.grafana_host }}
+          atlas_project_url: ${{ inputs.atlas_project_url }}
+          atlas_project: ${{ inputs.atlas_project }}
+          atlas_cluster: ${{ inputs.atlas_cluster }}
+          app_namespace: ${{ env.app_namespace }}
+          app_name: ${{ env.app_name }}
+          db_user: ${{ env.db_user }}
+          host_postfix: ${{ env.host_postfix }}
+          db_provider: ${{ env.db_provider }}
+          bucket_provider: ${{ env.bucket_provider }}
+          issue_number: ${{ env.issue_number }}
+          head_sha: ${{ needs.deploy-check.outputs.head_sha }}
+          dashboard_url: ${{ needs.deploy-deploy.outputs.dashboard_url }}
+
+  # /destroy flow
+  cleanup:
+    if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/destroy')) || github.event.action == 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'deployed') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-pr-preview@HCA-NA-add-huma-server-actions
+        with:
+          server_name: ${{ inputs.server_name }}
+          grafana_host: ${{ inputs.grafana_host }}
+          cluster_name: ${{ inputs.cluster_name }}
+          cluster_location: ${{ inputs.cluster_location }}
+          issue_number: ${{ env.issue_number }}
+          gke_sa_key: ${{ secrets.GKE_SA_KEY }}
+          grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
+
+  # rebase:
+  #   uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions
