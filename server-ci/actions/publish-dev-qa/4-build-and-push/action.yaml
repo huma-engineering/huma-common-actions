@@ -1,0 +1,31 @@
+name: Build and publish package
+description: Build and publish package
+
+inputs:
+  server_name: { required: true, description: '' }
+  include_sdk: { required: true, description: '' }
+  sdk_ref: { required: true, description: '' }
+  sdk_ssh_key: { required: true, description: '' }
+  github_token: { required: true, description: '' }
+
+runs:
+  using: composite
+  steps:
+    - name: Clone repo
+      uses: actions/checkout@v3
+    - name: Clone Submodule
+      if: ${{ inputs.include_sdk == 'true' }}
+      uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ inputs.sdk_ssh_key }}
+        repository: huma-engineering/huma-server-sdk
+        path: libs/huma-server-sdk
+        ref: ${{ inputs.sdk_ref }}
+    - name: Login to ghcr
+      run: echo ${{ inputs.github_token }} | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
+      shell: bash
+    - name: Build and Push to ghcr
+      env:
+        DOCKER_BUILDKIT: "1"
+      run: make ${{ inputs.server_name }}/push/docker/ghcr
+      shell: bash

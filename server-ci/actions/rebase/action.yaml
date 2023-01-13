@@ -1,0 +1,17 @@
+name: Automatic Rebase
+description: Automatic Rebase
+inputs:
+  github_token: { required: true, description: ''}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout the latest code
+      uses: actions/checkout@v3
+      with:
+        token: ${{ inputs.github_token }}
+        fetch-depth: 0  # otherwise, you will fail to push refs to dest repo
+    - name: Automatic Rebase
+      uses: cirrus-actions/rebase@1.7
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}

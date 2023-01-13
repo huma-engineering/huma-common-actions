@@ -1,0 +1,101 @@
+name: Publish to DEV/QA env
+
+on:
+  workflow_call:
+    inputs:
+      server_name: { required: true, type: string }
+      include_sdk: { required: true, type: boolean }
+      sdk_ref: { required: false, type: string }
+      enable_dev: { required: false, type: boolean }
+      enable_qa: { required: false, type: boolean }
+
+# yamllint disable rule:line-length
+
+  deploy_to_dev:
+    name: Deploy to DEV
+    needs: build_and_push
+    runs-on: ubuntu-20.04
+    if: success()
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get short SHA
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Set current commit SHA as image tag
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: "deploy/helmfile/values/gcp/values.gcp-uk-dev.yaml"
+          propertyPath: "image.tag"
+          value: ${{ env.SHORT_SHA }}
+          commitChange: false
+          updateFile: true
+          # message: Update image tag to ${{ env.SHORT_SHA }} [skip ci]
+      - name: Connect to VPN
+        uses: huma-engineering/huma-common-actions/openvpn-p81@v1.1.0
+        with:
+          configfile-url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/4rBJPOPWVX/openvpn-config/download
+          username: ${{ secrets.VPN_USERNAME }}
+          password: ${{ secrets.VPN_PASSWORD }}
+      - name: Login to ghcr
+        run: helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+      - name: Create kube config file
+        run: |
+          echo "${{ secrets.GCP_UK_DEV_KUBECONFIG }}" | base64 --decode > /tmp/config
+      - name: Create diff (DEV)
+        id: devdiffid
+        uses: huma-engineering/huma-common-actions/helmfile-pr-diff@v1.1.0
+        with:
+          kubeconfig: /tmp/config
+          helmfile-folder: deploy/helmfile
+          helmfile-environment: gcp-uk-dev
+      - name: Apply helmfile
+        uses: huma-engineering/huma-common-actions/helmfile-apply@v1.1.0
+        with:
+          kubeconfig: /tmp/config
+          helmfile-folder: deploy/helmfile
+          helmfile-environment: gcp-uk-dev
+          comment-id: ${{ steps.devdiffid.outputs.comment-id }}
+
+  deploy_to_qa:
+    name: Deploy to QA
+    environment: QA
+    needs: build_and_push
+    runs-on: ubuntu-20.04
+    if: success()
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get short SHA
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Set current commit SHA as image tag
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: "deploy/helmfile/values/gcp/values.gcp-uk-qa.yaml"
+          propertyPath: "image.tag"
+          value: ${{ env.SHORT_SHA }}
+          commitChange: false
+          updateFile: true
+          # message: Update image tag to ${{ env.SHORT_SHA }} [skip ci]
+      - name: Connect to VPN
+        uses: huma-engineering/huma-common-actions/openvpn-p81@v1.1.0
+        with:
+          configfile-url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/4rBJPOPWVX/openvpn-config/download
+          username: ${{ secrets.VPN_USERNAME }}
+          password: ${{ secrets.VPN_PASSWORD }}
+      - name: Login to ghcr
+        run: helm registry login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+      - name: Create kube config file
+        run: |
+          echo "${{ secrets.GCP_UK_QA_KUBECONFIG }}" | base64 --decode > /tmp/config
+      - name: Create diff (QA)
+        id: devdiffid
+        uses: huma-engineering/huma-common-actions/helmfile-pr-diff@v1.1.0
+        with:
+          kubeconfig: /tmp/config
+          helmfile-folder: deploy/helmfile
+          helmfile-environment: gcp-uk-qa
+      - name: Apply helmfile
+        uses: huma-engineering/huma-common-actions/helmfile-apply@v1.1.0
+        with:
+          kubeconfig: /tmp/config
+          helmfile-folder: deploy/helmfile
+          helmfile-environment: gcp-uk-qa
+          comment-id: ${{ steps.devdiffid.outputs.comment-id }}

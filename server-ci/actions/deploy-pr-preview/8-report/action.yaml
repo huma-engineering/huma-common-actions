@@ -77,7 +77,7 @@ runs:
         ref: ${{ inputs.head_sha }}
 
     - name: Clone Submodule
-      if: ${{ inputs.include_sdk }}
+      if: ${{ inputs.include_sdk == 'true' }}
       uses: actions/checkout@v3
       with:
         ssh-key: ${{ inputs.sdk_ssh_key }}

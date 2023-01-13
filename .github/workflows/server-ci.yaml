@@ -6,29 +6,35 @@ on:
       server_name: { required: true, type: string }
       include_sdk: { required: true, type: boolean }
       sdk_ref: { required: false, type: string }
-      cluster_name: { required: false, type: string }
-      cluster_location: { required: false, type: string }
-      atlas_cluster: { required: false, type: string }
-      atlas_project: { required: false, type: string }
+      cluster_name: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview-gke' }
+      cluster_location: { required: false, type: string, default: 'europe-west2' }
+      atlas_cluster: { required: false, type: string, default: 'hu-uk-sandbox-pr-preview' }
+      atlas_project: { required: false, type: string, default: 'hu-sandbox' }
       atlas_project_url: { required: false, type: string }
       db_dump_bucket_name: { required: false, type: string }
       kubedb_cluster: { required: true, type: string }
       kubedb_namespace: { required: false, type: string }
       grafana_host: { required: true, type: string }
       grafana_cluster_name: { required: true, type: string }
-      host_postfix: { required: true, type: string }
+      host_postfix: { required: true, type: string, default: 'sbx.huma.com' }
       source_gcs_bucket_qa: { required: true, type: string }
       source_gcs_bucket_dev: { required: true, type: string }
       source_s3_bucket_qa: { required: true, type: string }
       source_s3_bucket_dev: { required: true, type: string }
       make_upload_chart_command: { required: true, type: string }
-      aws_region: { required: false, type: string }
+      aws_region: { required: false, type: string, default: 'eu-west-2' }
       dockerfile: { required: true, type: string }
       make_build_push_ghcr: { required: true, type: string }
       docker_image_name: { required: true, type: string, description: 'Docker image name of make file' }
       docker_temp_tag_format: { required: true, type: string, description: 'Docker tag format in PRs' }
       helm_extra_values_file: { required: true, type: string }
       server_extra_config_file: { required: true, type: string }
+      dev_mongo_db_name: { required: true, type: string }
+      qa_mongo_db_name: { required: true, type: string }
+      mongo_dump_extra_options: { required: true, type: string }
+      migrate_py: { required: true, type: string }
+      migrate_config: { required: true, type: string }
+      version_py: { required: true, type: string }
 
 env:
   must_build: ${{
@@ -59,7 +65,20 @@ env:
   helm_chart_path: ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml
   issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
             github.event.pull_request.number }}
-  # issue_number: ${{ github.event.issue.number }}
+  mongo_dev_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
+      secrets.MONGO_PRE_PROD_USER_NAME,
+      secrets.MONGO_PRE_PROD_USER_PWD,
+      secrets.MONGO_PRE_PROD_HOST,
+      inputs.dev_mongo_db_name
+    ) }}
+  mongo_qa_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
+      secrets.MONGO_PRE_PROD_USER_NAME,
+      secrets.MONGO_PRE_PROD_USER_PWD,
+      secrets.MONGO_PRE_PROD_HOST,
+      inputs.dev_mongo_db_name
+    ) }}
+  is_publish_task: ${{ github.event_name == 'push' &&
+    (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')) }}
 
 # yamllint disable rule:line-length
 jobs:
@@ -73,7 +92,7 @@ jobs:
       must_build: ${{ steps.action.outputs.must_build }}
       is_deploy_flow: ${{ steps.action.outputs.is_deploy_flow }}
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/1-task@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/1-task@HCA-NA-add-huma-server-actions
         id: action
         with:
           must_build: ${{ env.must_build }}
@@ -88,7 +107,7 @@ jobs:
       head_sha: ${{ steps.action.outputs.head_sha }}
       short_sha: ${{ steps.action.outputs.short_sha }}
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
         id: action
         if: ${{ github.event.issue.pull_request
           && github.event.issue.state == 'open' }}
@@ -107,7 +126,7 @@ jobs:
     outputs:
       version: ${{ steps.helm.outputs.version }}
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/3-package-upload-helm-chart@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/3-package-upload-helm-chart@HCA-NA-add-huma-server-actions
         name: Deploy the Helm chart to GKE
         id: helm
         with:
@@ -127,7 +146,7 @@ jobs:
     name: Build and Push Container
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/4-build@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/4-build@HCA-NA-add-huma-server-actions
         with:
           include_sdk: ${{ inputs.include_sdk }}
           sdk_ref: ${{ inputs.sdk_ref }}
@@ -151,7 +170,7 @@ jobs:
       error: ${{ steps.deploy.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/5-deploy-helm-to-gke@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/5-deploy-helm-to-gke@HCA-NA-add-huma-server-actions
         id: deploy
         with:
           app_name: ${{ env.app_name }}
@@ -191,7 +210,7 @@ jobs:
       error: ${{ steps.restore.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/6-restore-db@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/6-restore-db@HCA-NA-add-huma-server-actions
         id: restore
         with:
           issue_number: ${{ env.issue_number }}
@@ -216,7 +235,7 @@ jobs:
       error: ${{ steps.copy-bucket.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/7-copy-bucket@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/7-copy-bucket@HCA-NA-add-huma-server-actions
         id: copy-bucket
         with:
           cluster_name: ${{ inputs.cluster_name }}
@@ -247,7 +266,7 @@ jobs:
       - deploy-deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/deploy-pr-preview/8-report@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/8-report@HCA-NA-add-huma-server-actions
         with:
           cluster_name: ${{ inputs.cluster_name }}
           cluster_location: ${{ inputs.cluster_location }}
@@ -278,7 +297,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'deployed') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/workflows/cleanup-pr-preview@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/cleanup-pr-preview@HCA-NA-add-huma-server-actions
         with:
           server_name: ${{ inputs.server_name }}
           grafana_host: ${{ inputs.grafana_host }}
@@ -288,5 +307,188 @@ jobs:
           gke_sa_key: ${{ secrets.GKE_SA_KEY }}
           grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
 
-  # rebase:
-  #   uses: huma-engineering/huma-common-actions/server-ci/workflows/rebase.yaml@HCA-NA-add-huma-server-actions
+  # /rebase flow
+  rebase:
+    name: Automatic Rebase
+    if: ${{ github.event.issue.pull_request != '' &&
+      contains(github.event.comment.body, '/rebase') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/rebase@HCA-NA-add-huma-server-actions
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # mongo automatic dumps
+  dump-mongo-dev-full:
+    if: ${{ inputs.dev_mongo_db_name != '' && !endsWith(gith ub.event.schedule, '1-5') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+        with:
+          bucket_name: ${{ inputs.db_dump_bucket_name }}
+          archive_name: ${{ inputs.server_name }}_full_dump_hs_sandbox_dev.gz
+          db_uri: ${{ env.mongo_dev_uri }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
+          dump_options: ''
+
+  dump-mongo-dev-quick:
+    if: ${{ inputs.dev_mongo_db_name != '' && endsWith(gith ub.event.schedule, '1-5') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+        with:
+          bucket_name: ${{ inputs.db_dump_bucket_name }}
+          archive_name: ${{ inputs.server_name }}_quick_dump_hs_sandbox_dev.gz
+          db_uri: ${{ env.mongo_dev_uri }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
+          dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
+
+  dump-mongo-qa-full:
+    if: ${{ inputs.qa_mongo_db_name != '' && !endsWith(gith ub.event.schedule, '1-5') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+        with:
+          bucket_name: ${{ inputs.db_dump_bucket_name }}
+          archive_name: ${{ inputs.server_name }}_full_dump_hs_sandbox_qa.gz
+          db_uri: ${{ env.mongo_qa_uri }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
+          dump_options: ''
+
+  dump-mongo-qa-quick:
+    if: ${{ inputs.qa_mongo_db_name != '' && endsWith(gith ub.event.schedule, '1-5') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+        with:
+          bucket_name: ${{ inputs.db_dump_bucket_name }}
+          archive_name: ${{ inputs.server_name }}_quick_dump_hs_sandbox_qa.gz
+          db_uri: ${{ env.mongo_qa_uri }}
+          gcp_credentials: ${{ secrets.GKE_SA_KEY }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
+          dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
+
+  run-migration:
+    if: ${{ github.event.issue.pull_request
+      && github.event.issue.state == 'open'
+      && startsWith(github.event.comment.body, '/run-migration') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/run-migration@HCA-NA-add-huma-server-actions
+        with:
+          server_name: ${{ inputs.server_name }}
+          app_namespace: ${{ env.app_namespace }}
+          cluster_name: ${{ inputs.cluster_name }}
+          cluster_location: ${{ inputs.cluster_location }}
+          migrate_py: ${{ inputs.migrate_py }}
+          migrate_config: ${{ inputs.migrate_config }}
+          has_deploy_tag: ${{ contains(github.event.issue.labels.*.name, 'deployed') }}
+          gke_sa_key: ${{ secrets.GKE_SA_KEY }}
+
+  change-logs:
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/change-logs@HCA-NA-add-huma-server-actions
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ref: ${{ inputs.sdk_ref }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          version_py: ${{ inputs.version_py }}
+
+  help-pr-preview:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/help-pr-preview@HCA-NA-add-huma-server-actions
+
+  # /publishing to dev and QA
+  publish-tests:
+    if: ${{ env.is_publish_task }}
+    name: Run tests
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/1-tests@HCA-NA-add-huma-server-actions
+        with:
+          server_name: ${{ inputs.server_name }}
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ref: ${{ inputs.sdk_ref }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-coverage-results:
+    needs: publish-tests
+    if: ${{ env.is_publish_task && success() }}
+    name: Publish coverage results
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/2-publish-coverage-results@HCA-NA-add-huma-server-actions
+
+  publish-test-results:
+    needs: publish-tests
+    if: ${{ env.is_publish_task && success() }}
+    name: Publish test results
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/3-publish-test-results@HCA-NA-add-huma-server-actions
+
+  publish-build-and-push:
+    needs: publish-tests
+    if: ${{ env.is_publish_task && success() }}
+    name: Build and push py-${{ inputs.server_name }} image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/4-build-and-push@HCA-NA-add-huma-server-actions
+        with:
+          server_name: ${{ inputs.server_name }}
+          include_sdk: ${{ inputs.include_sdk }}
+          sdk_ref: ${{ inputs.sdk_ref }}
+          sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-deploy-to-dev:
+    needs: publish-build-and-push
+    if: ${{ env.is_publish_task && success() }}
+    name: Update DEV env
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/5-deploy@HCA-NA-add-huma-server-actions
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          kubeconfig: ${{ secrets.GCP_UK_DEV_KUBECONFIG }}
+          env: dev
+
+  publish-deploy-to-qa:
+    needs: publish-build-and-push
+    if: ${{ env.is_publish_task && success() }}
+    name: Update QA env
+    environment: QA
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/5-deploy@HCA-NA-add-huma-server-actions
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vpn_username: ${{ secrets.VPN_USERNAME }}
+          vpn_password: ${{ secrets.VPN_PASSWORD }}
+          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          kubeconfig: ${{ secrets.GCP_UK_DEV_KUBECONFIG }}
+          env: qa

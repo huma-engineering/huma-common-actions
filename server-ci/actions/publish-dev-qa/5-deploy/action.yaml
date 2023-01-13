@@ -1,0 +1,54 @@
+name: Build and publish package
+description: Build and publish package
+
+inputs:
+  github_token: { required: true, description: '' }
+  vpn_config_url: { required: true, description: '' }
+  vpn_username: { required: true, description: '' }
+  vpn_password: { required: true, description: '' }
+  kubeconfig: { required: true, description: '' }
+  env: { required: true, description: 'Pass dev or qa'}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v3
+    - name: Get short SHA
+      run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      shell: bash
+    - name: Set current commit SHA as image tag
+      uses: fjogeleit/yaml-update-action@main
+      with:
+        valueFile: "deploy/helmfile/values/gcp/values.gcp-uk-${{ inputs.env }}.yaml"
+        propertyPath: "image.tag"
+        value: ${{ env.SHORT_SHA }}
+        commitChange: false
+        updateFile: true
+        # message: Update image tag to ${{ env.SHORT_SHA }} [skip ci]
+    - name: Connect to VPN
+      uses: huma-engineering/huma-common-actions/openvpn-p81@v1.1.0
+      with:
+        configfile-url: ${{ inputs.vpn_config_url }}
+        username: ${{ inputs.vpn_username }}
+        password: ${{ inputs.vpn_password }}
+    - name: Login to ghcr
+      run: helm registry login ghcr.io -u ${{ github.actor }} -p ${{ inputs.github_token }}
+      shell: bash
+    - name: Create kube config file
+      run: |
+        echo "${{ inputs.kubeconfig }}" | base64 --decode > /tmp/config
+      shell: bash
+    - name: Create diff (${{ inputs.env }})
+      id: devdiffid
+      uses: huma-engineering/huma-common-actions/helmfile-pr-diff@v1.1.0
+      with:
+        kubeconfig: /tmp/config
+        helmfile-folder: deploy/helmfile
+        helmfile-environment: gcp-uk-${{ inputs.env }}
+    - name: Apply helmfile
+      uses: huma-engineering/huma-common-actions/helmfile-apply@v1.1.0
+      with:
+        kubeconfig: /tmp/config
+        helmfile-folder: deploy/helmfile
+        helmfile-environment: gcp-uk-${{ inputs.env }}
+        comment-id: ${{ steps.devdiffid.outputs.comment-id }}

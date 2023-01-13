@@ -19,7 +19,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v3
       - name: Clone Submodule
-        if: ${{ inputs.include_sdk }}
+        if: ${{ inputs.include_sdk == 'true' }}
         uses: actions/checkout@v3
         with:
           ssh-key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
@@ -140,7 +140,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v3
       - name: Clone Submodule
-        if: ${{ inputs.include_sdk }}
+        if: ${{ inputs.include_sdk == 'true' }}
         uses: actions/checkout@v3
         with:
           ssh-key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}

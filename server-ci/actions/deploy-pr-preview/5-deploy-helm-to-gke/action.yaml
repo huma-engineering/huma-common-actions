@@ -62,7 +62,7 @@ runs:
         kubectl delete application --all=true -n ${{ inputs.app_namespace }}
       shell: bash
 
-    - name: Merge config-base.yaml and input.server_extra_config_file
+    - name: Merge config-base.yaml and inputs.server_extra_config_file
       run: |-
         yq eval-all '. as $item ireduce ({}; . * $item)' \
           ${{ github.action_path }}/../../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \

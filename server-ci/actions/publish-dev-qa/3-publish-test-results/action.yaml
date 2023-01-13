@@ -1,0 +1,23 @@
+name: Publish tests results
+description: Publish tests results
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v3
+    - name: Download unit tests
+      uses: actions/download-artifact@v3
+      with:
+        name: unit-junitresult.xml
+        path: ./testresults/
+    - name: Download integration tests
+      uses: actions/download-artifact@v3
+      with:
+        name: integration-junitresult.xml
+        path: ./testresults/
+    - name: Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      with:
+        check_name: "PR Test Results"
+        files: testresults/**/*.xml

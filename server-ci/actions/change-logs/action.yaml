@@ -1,0 +1,77 @@
+name: Changelog Workflow
+description: Changelog Workflow
+inputs:
+  github_token: { required: true, description: '' }
+  include_sdk: { required: true, description: '' }
+  sdk_ssh_key: { required: true, description: '' }
+  sdk_ref: { required: true, description: '' }
+  version_py: { required: true, description: '' }
+
+runs:
+  using: composite
+  steps:
+    - name: checkout out current code using public action
+      uses: actions/checkout@v3
+
+    - name: Clone Submodule
+      if: ${{ inputs.include_sdk == 'true' }}
+      uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ inputs.sdk_ssh_key }}
+        repository: huma-engineering/huma-server-sdk
+        path: libs/huma-server-sdk
+        ref: ${{ inputs.sdk_ref }}
+
+    - name: "Get Project Version"
+      id: project_version
+      run: |
+        echo "Reading version from version_path"
+        echo ::set-output name=VERSION::$(\
+          cat ${{ inputs.version_py }} \
+          | grep __VERSION__ \
+          | awk '{ split($0,a,/"/); print a[2]}' \
+          | cut -f1,2 -d'.' \
+          | tr -d '[[:space:]]' \
+        )
+      shell: bash
+
+    - name: Extract branch name
+      id: extract_branch
+      run: echo ::set-output name=BRANCH::${GITHUB_REF#refs/heads/}
+      shell: bash
+
+    - name: "Get list of PRs"
+      id: github_pull_requests
+      run: |
+        echo "Getting list of PRs"
+        echo ::set-output name=RELEASE::$(\
+          gh pr list \
+          --search 'milestone:${{ steps.project_version.outputs.VERSION }}' \
+          --state merged \
+          --json title,author,mergedAt,createdAt,number,url,labels \
+          --limit 300 \
+        )
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      shell: bash
+
+    - name: "Changelog Update"
+      id: bumpVersion
+      uses: "${{ github.action_path }}/changelog-update"
+      with:
+        version: ${{ steps.project_version.outputs.VERSION }}
+        release: ${{ steps.github_pull_requests.outputs.RELEASE }}
+
+    - name: "Create PR"
+      id: createPr
+      uses: "${{ github.action_path }}/create-pull-request"
+      with:
+        token: ${{ inputs.github_token }}
+        commit_message: Update CHANGELOG.md
+        base: ${{steps.extract_branch.outputs.BRANCH}}
+        branch: fix/changelog-update-${{steps.extract_branch.outputs.BRANCH}}
+        title: "[UPDATE] CHANGELOG.md update: ${{ steps.project_version.outputs.VERSION }}"
+        body: |
+          CHANGELOG.md updates for: ${{steps.extract_branch.outputs.BRANCH}}
+        file_path: "CHANGELOG.md"
+        folder: "."
