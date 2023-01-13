@@ -132,8 +132,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           make_build_push_ghcr: ${{ inputs.make_build_push_ghcr }}
           issue_number: ${{ env.issue_number }}
-          head_sha: needs.deploy-check.outputs.head_sha
-          head_ref: needs.deploy-check.outputs.head_ref
+          head_sha: ${{ needs.deploy-check.outputs.head_sha }}
+          head_ref: ${{ needs.deploy-check.outputs.head_ref }}
 
   deploy-deploy:
     name: Deploy the infrastructure Helm chart to GKE
