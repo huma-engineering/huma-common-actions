@@ -16,7 +16,7 @@ inputs:
 outputs:
   version:
     description: The version of created chart
-    value: ${{ inputs.update_chart == true && steps.update.outputs.version || steps.skip.outputs.version }}
+    value: ${{ inputs.update_chart == 'true' && steps.update.outputs.version || steps.skip.outputs.version }}
 runs:
   using: composite
   steps:
@@ -44,7 +44,7 @@ runs:
       shell: bash
 
     - name: Package and upload the chart
-      if: inputs.update_chart == true
+      if: inputs.update_chart == 'true'
       id: update
       env:
         HELM_EXPERIMENTAL_OCI: "1"

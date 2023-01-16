@@ -63,7 +63,6 @@ env:
   source_s3_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
     inputs.source_s3_bucket_qa || inputs.source_s3_bucket_dev }}
   update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
-  helm_chart_path: ${{ github.action_path }}/../deploy/charts/infrastructure/Chart.yaml
   issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
             github.event.pull_request.number }}
   mongo_dev_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
