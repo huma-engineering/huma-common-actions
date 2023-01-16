@@ -19,7 +19,6 @@ inputs:
   location: { description: GKE zone, required: true }
   version: { description: Chart version, required: true }
   helm_extra_values_file: { description: Custom values file, required: true }
-  server_extra_config_file: { description: Extra server config, required: true }
   py_path_in_docker: { description: The python execution path inside docker, e.g. /apps/dct_server.py, required: true }
   short_sha: { description: Git short_sha, required: true }
   head_sha: { description: Git head_sha, required: true }
@@ -62,12 +61,6 @@ runs:
         kubectl delete application --all=true -n ${{ inputs.app_namespace }}
       shell: bash
 
-    - name: Merge config-base.yaml and inputs.server_extra_config_file
-      run: |-
-        yq eval-all '. as $item ireduce ({}; . * $item)' \
-          ${{ github.action_path }}/../../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \
-          ${{ inputs.server_extra_config_file }} >> config.yaml
-      shell: bash
     # ref: https://helm.sh/docs/topics/registries/
     - name: Deploy a Helm chart
       id: helm_kubedb

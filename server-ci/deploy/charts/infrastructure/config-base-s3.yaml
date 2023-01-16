@@ -154,10 +154,6 @@ server:
   authorization:
     enable: true
     checkAdminIpAddress: true
-  deployment:
-    enable: true
-  moduleResult:
-    enable: true
   medication:
     enable: true
 

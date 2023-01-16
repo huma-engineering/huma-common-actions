@@ -11,6 +11,8 @@ inputs:
   sdk_ssh_key: { required: false, description: 'SSH key to fetch sdk project' }
   short_sha: { required: true, description: 'Short SHA' }
   update_chart: { required: true, description: 'Whether update the chart or not' }
+  bucket_provider: { description: Object Storage provider, required: true }
+  server_extra_config_file: { description: Extra server config, required: true }
 outputs:
   version:
     description: The version of created chart
@@ -29,6 +31,12 @@ runs:
         repository: huma-engineering/huma-server-sdk
         path: libs/huma-server-sdk
         ref: ${{ inputs.sdk_ref }}
+    - name: Merge config-base.yaml and inputs.server_extra_config_file
+      run: |-
+        yq eval-all '. as $item ireduce ({}; . * $item)' \
+          ${{ github.action_path }}/../../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \
+          ${{ inputs.server_extra_config_file }} >> config.yaml
+      shell: bash
     - name: 'Get chart version'
       id: skip
       run: |

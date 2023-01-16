@@ -35,6 +35,7 @@ on:
       migrate_py: { required: true, type: string }
       migrate_config: { required: true, type: string }
       version_py: { required: true, type: string }
+      enable_publish: { required: false, type: boolean, default: 'false' }
 
 env:
   must_build: ${{
@@ -78,6 +79,7 @@ env:
       inputs.qa_mongo_db_name
     ) }}
   is_publish_task: ${{ github.event_name == 'push' &&
+    inputs.enable_publish == 'true' &&
     (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')) }}
 
 # yamllint disable rule:line-length
@@ -136,6 +138,8 @@ jobs:
           sdk_ssh_key: ${{ secrets.SSH_KEY_TO_HUMA_SERVER_SDK }}
           short_sha: ${{ needs.deploy-check.outputs.short_sha }}
           update_chart: ${{ env.update_chart }}
+          bucket_provider: ${{ env.bucket_provider }}
+          server_extra_config_file: ${{ inputs.server_extra_config_file }}
 
   deploy-build:
     if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' &&
@@ -191,7 +195,6 @@ jobs:
           location: ${{ inputs.cluster_location }}
           version: ${{ needs.deploy-chart.outputs.version }}
           helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
-          server_extra_config_file: ${{ inputs.server_extra_config_file }}
           py_path_in_docker: /server/dct_server.py
           short_sha: ${{ needs.deploy-check.outputs.short_sha }}
           issue_number: ${{ env.issue_number }}
