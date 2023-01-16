@@ -79,7 +79,7 @@ spec:
     files:
       - path: /config.yaml
         content: |-
-          {{- $files.Get "config.yaml" | toYaml | nindent 10 }}
+          {{- $files.Get "config.yaml" | toYaml | nindent 8 }}
     image: "{{ .Values.server.image }}:{{ .Values.server.tag }}"
   apps:
     - name: server
