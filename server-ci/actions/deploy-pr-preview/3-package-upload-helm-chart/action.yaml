@@ -35,7 +35,7 @@ runs:
       run: |-
         yq eval-all '. as $item ireduce ({}; . * $item)' \
           ${{ github.action_path }}/../../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \
-          ${{ inputs.server_extra_config_file }} >> config.yaml
+          ${{ inputs.server_extra_config_file }} >> ${{ github.action_path }}/../../../deploy/charts/infrastructure/config.yaml
       shell: bash
     - name: 'Get chart version'
       id: skip
