@@ -55,6 +55,7 @@ runs:
         echo "${result}"
         echo "::set-output name=result::$result"
         echo "::set-output name=error::$error"
+      shell: bash
 
     - name: Send back the result
       if: steps.migrate.outputs.error == 0 && inputs.has_deploy_tag
