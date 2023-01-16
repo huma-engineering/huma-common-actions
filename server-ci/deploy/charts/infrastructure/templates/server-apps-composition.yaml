@@ -78,8 +78,7 @@ spec:
     {{- $files := .Files }}
     files:
       - path: /config.yaml
-        content: |-
-          {{- $files.Get "config.yaml" | toYaml | nindent 10 }}
+        content: {{- $files.Get "config.yaml" | toYaml | nindent 10 }}
     image: "{{ .Values.server.image }}:{{ .Values.server.tag }}"
   apps:
     - name: server

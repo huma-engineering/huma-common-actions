@@ -83,18 +83,6 @@ runs:
           --set mongodb.kubedb.clusterRef.name=${{ inputs.kubedb_cluster }} \
           --set mongodb.kubedb.clusterRef.namespace=${{ inputs.kubedb_namespace }} \
           --set mongodb.provider=${{ inputs.db_provider }} \
-          --set bucket.provider=${{ inputs.bucket_provider }} --dry-run --debug
-        helm upgrade ${{ inputs.app_name }} ${{ inputs.chart_url }} \
-          -i --create-namespace -n ${{ inputs.app_namespace }} \
-          -f ${{ inputs.helm_extra_values_file }} \
-          --version ${{ inputs.version }} \
-          --set server.py_path_in_docker=${{ inputs.py_path_in_docker }} \
-          --set server.image=${{ inputs.image_repository }} \
-          --set server.tag=$tag \
-          --set fullnameOverride=${{ inputs.app_name }} \
-          --set mongodb.kubedb.clusterRef.name=${{ inputs.kubedb_cluster }} \
-          --set mongodb.kubedb.clusterRef.namespace=${{ inputs.kubedb_namespace }} \
-          --set mongodb.provider=${{ inputs.db_provider }} \
           --set bucket.provider=${{ inputs.bucket_provider }} \
           && error=0 || error=$?
         echo "::set-output name=error::$error"
