@@ -391,7 +391,6 @@ jobs:
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/run-migration@HCA-NA-add-huma-server-actions
         with:
-          server_name: ${{ inputs.server_name }}
           app_namespace: ${{ env.app_namespace }}
           cluster_name: ${{ inputs.cluster_name }}
           cluster_location: ${{ inputs.cluster_location }}

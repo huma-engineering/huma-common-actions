@@ -1,7 +1,6 @@
 name: Run migrations for a PR preview deployment
 description: Run migrations for a PR preview deployment
 inputs:
-  server_name: { required: true, description: '' }
   app_namespace: { required: true, description: '' }
   cluster_name: { required: true, description: '' }
   cluster_location: { required: false, description: '' }
@@ -45,7 +44,7 @@ runs:
       if: ${{ inputs.has_deploy_tag }}
       id: migrate
       run: |
-        result=$(kubectl exec -n ${{ inputs.app_namespace }} deploy/${{ inputs.server_name }} \
+        result=$(kubectl exec -n ${{ inputs.app_namespace }} deploy/server \
           -- python ${{ inputs.migrate_py }} \
           --config ${{ inputs.migrate_config }} 2>&1) && error=0 || error=$?
         # remove special characters
