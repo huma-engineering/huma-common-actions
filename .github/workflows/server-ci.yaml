@@ -32,6 +32,7 @@ on:
       dev_mongo_db_name: { required: true, type: string }
       qa_mongo_db_name: { required: true, type: string }
       mongo_dump_extra_options: { required: true, type: string }
+      server_py: { required: true, type: string }
       migrate_py: { required: true, type: string }
       migrate_config: { required: true, type: string }
       version_py: { required: true, type: string }
@@ -194,7 +195,7 @@ jobs:
           location: ${{ inputs.cluster_location }}
           version: ${{ needs.deploy-chart.outputs.version }}
           helm_extra_values_file: ${{ inputs.helm_extra_values_file }}
-          py_path_in_docker: /server/dct_server.py
+          server_py: ${{ inputs.server_py }}
           short_sha: ${{ needs.deploy-check.outputs.short_sha }}
           issue_number: ${{ env.issue_number }}
           head_sha: ${{ needs.deploy-check.outputs.head_sha }}
