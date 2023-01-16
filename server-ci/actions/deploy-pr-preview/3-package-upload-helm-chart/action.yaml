@@ -37,7 +37,8 @@ runs:
         # yq eval-all '. as $item ireduce ({}; . * $item)' \
           # $yaml_dir/config-base-${{ inputs.bucket_provider }}.yaml \
           # ${{ inputs.server_extra_config_file }} >> $yaml_dir/config.yaml
-        cp $yaml_dir/config-base-${{ inputs.bucket_provider }}.yaml $yaml_dir/config.yaml
+        cp ${{ github.action_path }}/../../../deploy/charts/infrastructure/config-base-${{ inputs.bucket_provider }}.yaml \
+          ${{ github.action_path }}/../../../deploy/charts/infrastructure/config.yaml
       shell: bash
     - name: 'Get chart version'
       id: skip
