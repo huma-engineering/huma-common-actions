@@ -35,7 +35,7 @@ on:
       migrate_py: { required: true, type: string }
       migrate_config: { required: true, type: string }
       version_py: { required: true, type: string }
-      enable_publish: { required: false, type: boolean, default: 'false' }
+      enable_publish: { required: false, type: boolean, default: false }
 
 env:
   must_build: ${{
