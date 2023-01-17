@@ -7,13 +7,16 @@ runs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - run: 'cat ${{ github.action_path }}/help-sdk-pr-preview.md'
+    - run: copy ${{ github.action_path }}/help-sdk-pr-preview.md ./help-sdk-pr-preview.md
       shell: bash
 
     - id: template
       uses: chuhlomin/render-template@v1.4
       with:
-        template: ${{ github.action_path }}/help-sdk-pr-preview.md
+        template: ./help-sdk-pr-preview.md
+
+    - run: rm ./help-sdk-pr-preview.md
+      shell: bash
 
     - name: help
       uses: peter-evans/create-or-update-comment@v2
