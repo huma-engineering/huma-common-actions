@@ -7,6 +7,9 @@ runs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - run: 'echo ${{ github.action_path }} && ls ${{ github.action_path }}'
+      shell: bash
+
     - id: template
       uses: chuhlomin/render-template@v1.4
       with:
