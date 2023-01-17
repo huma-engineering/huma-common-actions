@@ -66,12 +66,13 @@ env:
   update_chart: ${{ contains(github.event.comment.body, '--update-chart') && true || false }}
   issue_number: ${{ github.event.action == 'created' && github.event.issue.number ||
             github.event.pull_request.number }}
-  mongo_dev_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
-      secrets.MONGO_PRE_PROD_USER_NAME,
-      secrets.MONGO_PRE_PROD_USER_PWD,
-      secrets.MONGO_PRE_PROD_HOST,
-      inputs.dev_mongo_db_name
-    ) }}
+  mongo_dev_uri: ${{ secrets.MONGO_DEV_URI }}
+  # mongo_dev_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
+  #     secrets.MONGO_PRE_PROD_USER_NAME,
+  #     secrets.MONGO_PRE_PROD_USER_PWD,
+  #     secrets.MONGO_PRE_PROD_HOST,
+  #     inputs.dev_mongo_db_name
+  #   ) }}
   mongo_qa_uri: ${{ format('mongodb+srv://{0}:{1}@{2}/{3}',
       secrets.MONGO_PRE_PROD_USER_NAME,
       secrets.MONGO_PRE_PROD_USER_PWD,
