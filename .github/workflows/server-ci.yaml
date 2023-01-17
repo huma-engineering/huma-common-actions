@@ -343,8 +343,7 @@ jobs:
     # if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/test@HCA-NA-add-huma-server-actions
-      # - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
         with:
           bucket_name: ${{ inputs.db_dump_bucket_name }}
           archive_name: ${{ inputs.server_name }}_quick_dump_hs_sandbox_dev.gz
