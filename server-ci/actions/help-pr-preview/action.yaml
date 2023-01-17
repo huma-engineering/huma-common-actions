@@ -7,7 +7,7 @@ runs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - run: copy ${{ github.action_path }}/help-sdk-pr-preview.md ./help-sdk-pr-preview.md
+    - run: cp ${{ github.action_path }}/help-sdk-pr-preview.md ./help-sdk-pr-preview.md
       shell: bash
 
     - id: template
