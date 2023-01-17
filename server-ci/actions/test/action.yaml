@@ -66,6 +66,8 @@ runs:
       run: curl ifconfig.me
       shell: bash
 
+    - run: cat openvpn.log
+      shell: bash
     - name: Setup MongoDB Tools
       uses: boly38/action-mongo-tools@stable
 

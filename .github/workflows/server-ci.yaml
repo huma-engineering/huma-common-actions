@@ -340,7 +340,6 @@ jobs:
           dump_options: ''
 
   dump-mongo-dev-quick:
-    # if: ${{  }}
     # if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
