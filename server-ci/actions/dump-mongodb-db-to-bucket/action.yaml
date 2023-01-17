@@ -92,5 +92,5 @@ runs:
     - name: Kill VPN connection
       if: always()
       run: |
-        killall openvpn
+        sudo killall openvpn
       shell: bash
