@@ -81,6 +81,7 @@ env:
   is_publish_task: ${{ github.event_name == 'push' &&
     inputs.enable_publish == 'true' &&
     (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')) }}
+  vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/ZlUsofhzlD/openvpn-config/download
 
 # yamllint disable rule:line-length
 jobs:
@@ -334,7 +335,7 @@ jobs:
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
-          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_config_url: ${{ env.vpn_config_url }}
           vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
           dump_options: ''
 
@@ -350,7 +351,7 @@ jobs:
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
-          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_config_url: ${{ env.vpn_config_url }}
           vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
           dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
 
@@ -366,7 +367,7 @@ jobs:
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
-          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_config_url: ${{ env.vpn_config_url }}
           vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
           dump_options: ''
 
@@ -382,7 +383,7 @@ jobs:
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
-          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_config_url: ${{ env.vpn_config_url }}
           vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
           dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
 
@@ -494,7 +495,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
-          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_config_url: ${{ env.vpn_config_url }}
           kubeconfig: ${{ secrets.GCP_UK_DEV_KUBECONFIG }}
           env: dev
 
@@ -512,6 +513,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
-          vpn_config_url: https://api.perimeter81.com/api/networks/XkBbhFGBtm/tunnels/B0XEq9DgZn/openvpn-config/download
+          vpn_config_url: ${{ env.vpn_config_url }}
           kubeconfig: ${{ secrets.GCP_UK_DEV_KUBECONFIG }}
           env: qa
