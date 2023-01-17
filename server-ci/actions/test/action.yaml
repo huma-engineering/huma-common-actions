@@ -52,7 +52,7 @@ runs:
       with:
         config_file: ./openvpn-config.ovpn
         username: ${{ inputs.vpn_username }}
-        password: ${{ inputs.vpn_password }}
+        password: chert
 
     - name: Wait for a VPN connection
       if: inputs.vpn_check_internal_domain != ''
