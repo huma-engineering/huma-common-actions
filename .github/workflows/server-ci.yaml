@@ -340,10 +340,12 @@ jobs:
           dump_options: ''
 
   dump-mongo-dev-quick:
-    if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
+    # if: ${{  }}
+    # if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/test@HCA-NA-add-huma-server-actions
+      # - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
         with:
           bucket_name: ${{ inputs.db_dump_bucket_name }}
           archive_name: ${{ inputs.server_name }}_quick_dump_hs_sandbox_dev.gz
@@ -352,6 +354,7 @@ jobs:
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
           vpn_config_url: ${{ env.vpn_config_url }}
+          # vpn_check_internal_domain: hu-gcp-staging-cluster-pl-0.o7bwx.mongodb.net
           vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
           dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
 
