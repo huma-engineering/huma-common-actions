@@ -113,7 +113,7 @@ jobs:
       head_sha: ${{ steps.action.outputs.head_sha }}
       short_sha: ${{ steps.action.outputs.short_sha }}
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/2-check@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/1-check@HCA-NA-add-huma-server-actions
         id: action
         if: ${{ github.event.issue.pull_request
           && github.event.issue.state == 'open' }}
@@ -132,7 +132,7 @@ jobs:
     outputs:
       version: ${{ steps.helm.outputs.version }}
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/3-package-upload-helm-chart@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/2-package-upload-helm-chart@HCA-NA-add-huma-server-actions
         name: Deploy the Helm chart to GKE
         id: helm
         with:
@@ -154,7 +154,7 @@ jobs:
     name: Build and Push Container
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/4-build@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/3-build@HCA-NA-add-huma-server-actions
         with:
           include_sdk: ${{ inputs.include_sdk }}
           sdk_ref: ${{ inputs.sdk_ref }}
@@ -178,7 +178,7 @@ jobs:
       error: ${{ steps.deploy.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/5-deploy-helm-to-gke@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/4-deploy-helm-to-gke@HCA-NA-add-huma-server-actions
         id: deploy
         with:
           app_name: ${{ env.app_name }}
@@ -217,7 +217,7 @@ jobs:
       error: ${{ steps.restore.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/6-restore-db@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/5-restore-db@HCA-NA-add-huma-server-actions
         id: restore
         with:
           issue_number: ${{ env.issue_number }}
@@ -242,7 +242,7 @@ jobs:
       error: ${{ steps.copy-bucket.outputs.error }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/7-copy-bucket@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/6-copy-bucket@HCA-NA-add-huma-server-actions
         id: copy-bucket
         with:
           cluster_name: ${{ inputs.cluster_name }}
@@ -273,7 +273,7 @@ jobs:
       - deploy-deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/8-report@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/7-report@HCA-NA-add-huma-server-actions
         with:
           cluster_name: ${{ inputs.cluster_name }}
           cluster_location: ${{ inputs.cluster_location }}
