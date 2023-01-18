@@ -85,8 +85,14 @@ runs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
+    - run: date
+      shell: bash
+
     - name: Upload to a bucket
-      run: gsutil cp ${{ inputs.archive_name }} gs://${{ inputs.bucket_name }}
+      run: gsutil cp  -o GSUtil:parallel_process_count=1 ${{ inputs.archive_name }} gs://${{ inputs.bucket_name }}
+      shell: bash
+
+    - run: date
       shell: bash
 
     - name: Kill VPN connection
