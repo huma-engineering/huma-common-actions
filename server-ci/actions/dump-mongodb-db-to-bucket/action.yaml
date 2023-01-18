@@ -96,11 +96,11 @@ runs:
       if: always()
       shell: bash
 
-    # - name: Kill VPN connection
-    #   if: always()
-    #   run: |
-    #     sudo killall openvpn
-    #   shell: bash
+    - name: Kill VPN connection
+      if: always()
+      run: |
+        sudo killall openvpn
+      shell: bash
 
     - run: date
       shell: bash
