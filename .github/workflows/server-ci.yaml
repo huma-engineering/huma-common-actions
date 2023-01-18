@@ -21,7 +21,6 @@ on:
       source_gcs_bucket_dev: { required: true, type: string }
       source_s3_bucket_qa: { required: true, type: string }
       source_s3_bucket_dev: { required: true, type: string }
-      make_upload_chart_command: { required: true, type: string }
       aws_region: { required: false, type: string, default: 'eu-west-2' }
       dockerfile: { required: true, type: string }
       make_build_push_ghcr: { required: true, type: string }
@@ -88,7 +87,7 @@ env:
 jobs:
   # /deploy and /rebuild flow
   task:
-    name: Check if this flow must be run at all or not
+    name: Parse the comments to find out which flow must be called
     runs-on: ubuntu-latest
     outputs:
       is_deploy: ${{ steps.action.outputs.is_deploy }}
