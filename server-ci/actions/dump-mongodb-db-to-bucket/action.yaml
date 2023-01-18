@@ -89,7 +89,7 @@ runs:
       shell: bash
 
     - name: Upload to a bucket
-      run: gsutil cp  -o GSUtil:parallel_process_count=1 ${{ inputs.archive_name }} gs://${{ inputs.bucket_name }}
+      run: gsutil cp ${{ inputs.archive_name }} gs://${{ inputs.bucket_name }}
       shell: bash
 
     - run: date
