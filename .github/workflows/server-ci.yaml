@@ -333,7 +333,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: task
     steps:
-      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
         with:
           bucket_name: ${{ inputs.db_dump_bucket_name }}
           archive_name: ${{ inputs.server_name }}_full_dump_hs_sandbox_dev.gz
@@ -370,7 +370,7 @@ jobs:
         needs.task.outputs.is_full_dump) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
         with:
           bucket_name: ${{ inputs.db_dump_bucket_name }}
           archive_name: ${{ inputs.server_name }}_full_dump_hs_sandbox_qa.gz
@@ -388,7 +388,7 @@ jobs:
         needs.task.outputs.is_quick_dump) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
         with:
           bucket_name: ${{ inputs.db_dump_bucket_name }}
           archive_name: ${{ inputs.server_name }}_quick_dump_hs_sandbox_qa.gz
