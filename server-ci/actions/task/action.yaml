@@ -17,6 +17,12 @@ outputs:
     description: 'Showing if the deploy flow must be called or not'
     value: ${{
       (steps.check.outputs.is_deploy == 'true' || steps.check.outputs.is_rebuild == 'true') && 'true' || 'false' }}
+  is_quick_dump:
+    description: 'Showing if the the quick dumps must be called or not'
+    value: ${{ steps.check.outputs.is_quick_dump == 'true' || steps.check.outputs.is_all_dump == 'true' }}
+  is_full_dump:
+    description: 'Showing if the the full dumps must be called or not'
+    value: ${{ steps.check.outputs.is_full_dump == 'true' || steps.check.outputs.is_all_dump == 'true' }}
 
 runs:
   using: composite
@@ -25,5 +31,8 @@ runs:
       run: |-
         echo "::set-output name=is_deploy::${{ startsWith(github.event.comment.body, '/deploy') && 'true' || 'false' }}"
         echo "::set-output name=is_rebuild::${{ startsWith(github.event.comment.body, '/rebuild') && 'true' || 'false' }}"
+        echo "::set-output name=is_quick_dump::${{ startsWith(github.event.comment.body, '/dump_quick') }}"
+        echo "::set-output name=is_full_dump::${{ startsWith(github.event.comment.body, '/dump_full') }}"
+        echo "::set-output name=is_all_dump::${{ startsWith(github.event.comment.body, '/dump_all') }}"
         echo "::set-output name=must_build::${{ inputs.must_build }}"
       shell: bash

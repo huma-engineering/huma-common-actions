@@ -87,7 +87,7 @@ env:
 # yamllint disable rule:line-length
 jobs:
   # /deploy and /rebuild flow
-  deploy-task:
+  task:
     name: Check if this flow must be run at all or not
     runs-on: ubuntu-latest
     outputs:
@@ -95,15 +95,17 @@ jobs:
       is_rebuild: ${{ steps.action.outputs.is_rebuild }}
       must_build: ${{ steps.action.outputs.must_build }}
       is_deploy_flow: ${{ steps.action.outputs.is_deploy_flow }}
+      is_quick_dump: ${{ steps.action.outputs.is_quick_dump }}
+      is_full_dump: ${{ steps.action.outputs.is_full_dump }}
     steps:
-      - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/1-task@HCA-NA-add-huma-server-actions
+      - uses: huma-engineering/huma-common-actions/server-ci/actions/task@HCA-NA-add-huma-server-actions
         id: action
         with:
           must_build: ${{ env.must_build }}
 
   deploy-check:
-    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' }}
-    needs: deploy-task
+    if: ${{ needs.task.outputs.is_deploy_flow == 'true' }}
+    needs: task
     name: Check is /deploy or /rebuild
     runs-on: ubuntu-latest
     outputs:
@@ -117,15 +119,15 @@ jobs:
           && github.event.issue.state == 'open' }}
         with:
           issue_number: ${{ env.issue_number }}
-          is_deployed: ${{ needs.deploy-task.outputs.is_deploy }}
-          is_rebuild: ${{ needs.deploy-task.outputs.is_rebuild }}
+          is_deployed: ${{ needs.task.outputs.is_deploy }}
+          is_rebuild: ${{ needs.task.outputs.is_rebuild }}
 
   deploy-chart:
     name: Package and upload the Helm chart
     needs:
       - deploy-check
-      - deploy-task
-    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' }}
+      - task
+    if: ${{ needs.task.outputs.is_deploy_flow == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.helm.outputs.version }}
@@ -144,11 +146,11 @@ jobs:
           server_extra_config_file: ${{ inputs.server_extra_config_file }}
 
   deploy-build:
-    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' &&
-      needs.deploy-task.outputs.must_build == 'true' }}
+    if: ${{ needs.task.outputs.is_deploy_flow == 'true' &&
+      needs.task.outputs.must_build == 'true' }}
     needs:
       - deploy-check
-      - deploy-task
+      - task
     name: Build and Push Container
     runs-on: ubuntu-latest
     steps:
@@ -168,9 +170,9 @@ jobs:
     needs:
       - deploy-check
       - deploy-chart
-      - deploy-task
-    if: ${{ needs.deploy-task.outputs.is_deploy_flow == 'true' &&
-      needs.deploy-task.outputs.must_build == 'true' }}
+      - task
+    if: ${{ needs.task.outputs.is_deploy_flow == 'true' &&
+      needs.task.outputs.must_build == 'true' }}
     outputs:
       dashboard_url: ${{ steps.deploy.outputs.dashboard_url }}
       error: ${{ steps.deploy.outputs.error }}
@@ -202,15 +204,15 @@ jobs:
           issue_number: ${{ env.issue_number }}
           head_sha: ${{ needs.deploy-check.outputs.head_sha }}
           chart_version: ${{ needs.deploy-chart.outputs.version }}
-          is_deployed: ${{ needs.deploy-task.outputs.is_deploy }}
+          is_deployed: ${{ needs.task.outputs.is_deploy }}
           grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
 
   deploy-restore-db:
     name: Restore MongoDB dump
     needs:
      - deploy-deploy
-     - deploy-task
-    if: ${{ needs.deploy-task.outputs.is_deploy == 'true' }}
+     - task
+    if: ${{ needs.task.outputs.is_deploy == 'true' }}
     outputs:
       error: ${{ steps.restore.outputs.error }}
     runs-on: ubuntu-latest
@@ -234,8 +236,8 @@ jobs:
     name: Clone the selected source bucket to a new GCS or S3 bucket
     needs:
      - deploy-deploy
-     - deploy-task
-    if: ${{ needs.deploy-task.outputs.is_deploy == 'true' }}
+     - task
+    if: ${{ needs.task.outputs.is_deploy == 'true' }}
     outputs:
       error: ${{ steps.copy-bucket.outputs.error }}
     runs-on: ubuntu-latest
@@ -257,7 +259,7 @@ jobs:
           source_gcs_bucket: ${{ env.source_gcs_bucket }}
 
   deploy-report:
-    if: ${{ needs.deploy-task.outputs.is_deploy == 'true' &&
+    if: ${{ needs.task.outputs.is_deploy == 'true' &&
       needs.deploy-deploy.outputs.error == 0 &&
       needs.deploy-restore-db.outputs.error == 0 &&
       needs.deploy-copy-bucket.outputs.error == 0 }}
@@ -266,7 +268,7 @@ jobs:
       - deploy-build
       - deploy-restore-db
       - deploy-copy-bucket
-      - deploy-task
+      - task
       - deploy-check
       - deploy-deploy
     runs-on: ubuntu-latest
@@ -325,8 +327,11 @@ jobs:
 
   # mongo automatic dumps
   dump-mongo-dev-full:
-    if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && !endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.dev_mongo_db_name != '' &&
+      ((github.event.schedule != '' && !endsWith(github.event.schedule, '1-5')) ||
+        needs.task.outputs.is_full_dump) }}
     runs-on: ubuntu-latest
+    needs: task
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
         with:
@@ -341,11 +346,13 @@ jobs:
           dump_options: ''
 
   dump-mongo-dev-quick:
-    # if: ${{ inputs.dev_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.dev_mongo_db_name != '' &&
+      ((github.event.schedule != '' && endsWith(github.event.schedule, '1-5')) ||
+        needs.task.outputs.is_quick_dump) }}
     runs-on: ubuntu-latest
+    needs: task
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
-#      - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
         with:
           bucket_name: ${{ inputs.db_dump_bucket_name }}
           archive_name: ${{ inputs.server_name }}_quick_dump_hs_sandbox_dev.gz
@@ -354,12 +361,13 @@ jobs:
           vpn_username: ${{ secrets.VPN_USERNAME }}
           vpn_password: ${{ secrets.VPN_PASSWORD }}
           vpn_config_url: ${{ env.vpn_config_url }}
-          # vpn_check_internal_domain: hu-gcp-staging-cluster-pl-0.o7bwx.mongodb.net
           vpn_check_internal_domain: hu-pre-prod-london.wjabo.gcp.mongodb.net
           dump_options: '--excludeCollection=deploymentrevision --excludeCollection=auditlog ${{ inputs.mongo_dump_extra_options }}'
 
   dump-mongo-qa-full:
-    if: ${{ inputs.qa_mongo_db_name != '' && github.event.schedule != '' && !endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.qa_mongo_db_name != '' &&
+      ((github.event.schedule != '' && !endsWith(github.event.schedule, '1-5')) ||
+        needs.task.outputs.is_full_dump) }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
@@ -375,7 +383,9 @@ jobs:
           dump_options: ''
 
   dump-mongo-qa-quick:
-    if: ${{ inputs.qa_mongo_db_name != '' && github.event.schedule != '' && endsWith(github.event.schedule, '1-5') }}
+    if: ${{ inputs.qa_mongo_db_name != '' &&
+      ((github.event.schedule != '' && endsWith(github.event.schedule, '1-5')) ||
+        needs.task.outputs.is_quick_dump) }}
     runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-github-actions/dump-mongodb-db-to-bucket@v0.19.1
