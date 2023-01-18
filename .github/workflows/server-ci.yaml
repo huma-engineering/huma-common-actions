@@ -186,7 +186,7 @@ jobs:
           atlas_project: ${{ inputs.atlas_project }}
           app_namespace: ${{ env.app_namespace }}
           bucket_provider: ${{ env.bucket_provider }}
-          chart_url: oci://ghcr.io/huma-engineering/helm-charts/${{ inputs.server_name }}-backend-requisites
+          chart_url: oci://ghcr.io/huma-engineering/${{ inputs.server_name }}/huma-backend-requisites
           clean_workload: "true"
           cluster_name: ${{ inputs.cluster_name }}
           db_provider: ${{ env.db_provider }}
