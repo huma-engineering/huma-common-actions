@@ -85,9 +85,6 @@ runs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
-    - run: date
-      shell: bash
-
     - name: Upload to a bucket
       run: gsutil cp ${{ inputs.archive_name }} gs://${{ inputs.bucket_name }}
       shell: bash
