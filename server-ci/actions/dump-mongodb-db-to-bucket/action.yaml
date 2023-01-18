@@ -100,3 +100,6 @@ runs:
       run: |
         sudo killall openvpn
       shell: bash
+
+    - run: date
+      shell: bash
