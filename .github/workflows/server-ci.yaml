@@ -135,6 +135,7 @@ jobs:
         name: Deploy the Helm chart to GKE
         id: helm
         with:
+          server_name: ${{ inputs.server_name }}
           head_sha: ${{ needs.deploy-check.outputs.head_sha }}
           include_sdk: ${{ inputs.include_sdk }}
           sdk_ref: ${{ inputs.sdk_ref }}

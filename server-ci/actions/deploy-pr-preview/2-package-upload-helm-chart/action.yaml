@@ -5,6 +5,7 @@ branding:
   color: 'blue'
   icon: 'package'
 inputs:
+  server_name: { required: true, description: 'Server code name' }
   head_sha: { required: true, description: 'Commit SHA' }
   include_sdk: { required: true, description: 'False for dct, rpm, etc. True for sdk' }
   sdk_ref: { required: false, description: string }
