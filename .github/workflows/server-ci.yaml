@@ -220,6 +220,7 @@ jobs:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/5-restore-db@HCA-NA-add-huma-server-actions
         id: restore
         with:
+          server_name: ${{ inputs.server_name }}
           issue_number: ${{ env.issue_number }}
           app_namespace: ${{ env.app_namespace }}
           full_db_dump_prefix: ${{ env.full_db_dump_prefix }}
