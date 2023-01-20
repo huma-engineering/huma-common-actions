@@ -36,6 +36,8 @@ on:
       migrate_config: { required: true, type: string }
       version_py: { required: true, type: string }
       enable_publish: { required: false, type: boolean, default: false }
+      source_db_name_dev: { required: true, type: string }
+      source_db_name_qa: { required: true, type: string }
 
 env:
   must_build: ${{
@@ -57,7 +59,7 @@ env:
   db_user: ${{ inputs.server_name }}-${{ github.event.issue.number }}-db
   full_db_dump_prefix: ${{ contains(github.event.comment.body, '--db-full') && 'full_' || 'quick_' }}
   host_postfix: ${{ inputs.server_name }}-${{ github.event.issue.number }}.${{ inputs.host_postfix }}
-  source_db_name: ${{ contains(github.event.comment.body, '--env=qa') && 'qa' || 'dev' }}
+  source_db_name: ${{ contains(github.event.comment.body, '--env=qa') && inputs.source_db_name_dev || inputs.source_db_name_dev_qa }}
   source_gcs_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
     inputs.source_gcs_bucket_qa || inputs.source_gcs_bucket_dev }}
   source_s3_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
