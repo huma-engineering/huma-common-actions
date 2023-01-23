@@ -5,7 +5,7 @@ inputs:
   issue_number: { required: true, description: '' }
   app_namespace: { required: true, description: '' }
   full_db_dump_prefix: { required: true, description: '' }
-  arhieve_name_postfix: { required: true, description: '' }
+  archieve_name_postfix: { required: true, description: '' }
   source_db_name: { required: true, description: '' }
   source_gcs_bucket: { required: true, description: '' }
   db_dump_bucket_name: { required: true, description: '' }
@@ -29,7 +29,7 @@ runs:
       with:
         app_namespace: ${{ inputs.app_namespace }}
         archive_name: ${{ format('{0}_{1}dump_hs_sandbox_{2}.gz',
-          inputs.server_name, inputs.full_db_dump_prefix, inputs.source_db_name) }}
+          inputs.server_name, inputs.full_db_dump_prefix, inputs.archieve_name_postfix) }}
         bucket_name: ${{ inputs.db_dump_bucket_name }}
         cluster_name: ${{ inputs.cluster_name }}
         db_provider: ${{ inputs.db_provider }}
