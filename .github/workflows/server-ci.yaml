@@ -60,6 +60,7 @@ env:
   full_db_dump_prefix: ${{ contains(github.event.comment.body, '--db-full') && 'full_' || 'quick_' }}
   host_postfix: ${{ inputs.server_name }}-${{ github.event.issue.number }}.${{ inputs.host_postfix }}
   source_db_name: ${{ contains(github.event.comment.body, '--env=qa') && inputs.source_db_name_qa || inputs.source_db_name_dev }}
+  arhieve_name_postfix: ${{ contains(github.event.comment.body, '--env=qa') && 'qa' || 'dev' }}
   source_gcs_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
     inputs.source_gcs_bucket_qa || inputs.source_gcs_bucket_dev }}
   source_s3_bucket: ${{ contains(github.event.comment.body, '--env=qa') &&
@@ -226,6 +227,7 @@ jobs:
           issue_number: ${{ env.issue_number }}
           app_namespace: ${{ env.app_namespace }}
           full_db_dump_prefix: ${{ env.full_db_dump_prefix }}
+          arhieve_name_postfix:
           source_db_name: ${{ env.source_db_name }}
           source_gcs_bucket: ${{ env.source_gcs_bucket }}
           db_dump_bucket_name: ${{ inputs.db_dump_bucket_name }}
