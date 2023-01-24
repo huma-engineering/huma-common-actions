@@ -91,7 +91,7 @@ jobs:
   # /deploy and /rebuild flow
   task:
     name: Parse the comments to find out which flow must be called
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     outputs:
       is_deploy: ${{ steps.action.outputs.is_deploy }}
       is_rebuild: ${{ steps.action.outputs.is_rebuild }}
@@ -109,7 +109,7 @@ jobs:
     if: ${{ needs.task.outputs.is_deploy_flow == 'true' }}
     needs: task
     name: Check is /deploy or /rebuild
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     outputs:
       head_ref: ${{ steps.action.outputs.head_ref }}
       head_sha: ${{ steps.action.outputs.head_sha }}
@@ -130,7 +130,7 @@ jobs:
       - deploy-check
       - task
     if: ${{ needs.task.outputs.is_deploy_flow == 'true' }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.helm.outputs.version }}
     steps:
@@ -155,7 +155,7 @@ jobs:
       - deploy-check
       - task
     name: Build and Push Container
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/3-build@HCA-NA-add-huma-server-actions
         with:
@@ -179,7 +179,7 @@ jobs:
     outputs:
       dashboard_url: ${{ steps.deploy.outputs.dashboard_url }}
       error: ${{ steps.deploy.outputs.error }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/4-deploy-helm-to-gke@HCA-NA-add-huma-server-actions
         id: deploy
@@ -218,7 +218,7 @@ jobs:
     if: ${{ needs.task.outputs.is_deploy == 'true' }}
     outputs:
       error: ${{ steps.restore.outputs.error }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/5-restore-db@HCA-NA-add-huma-server-actions
         id: restore
@@ -245,7 +245,7 @@ jobs:
     if: ${{ needs.task.outputs.is_deploy == 'true' }}
     outputs:
       error: ${{ steps.copy-bucket.outputs.error }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/6-copy-bucket@HCA-NA-add-huma-server-actions
         id: copy-bucket
@@ -276,7 +276,7 @@ jobs:
       - task
       - deploy-check
       - deploy-deploy
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/deploy-pr-preview/7-report@HCA-NA-add-huma-server-actions
         with:
@@ -307,7 +307,7 @@ jobs:
     if: ${{ (github.event.action == 'created' && github.event.issue.pull_request &&
       startsWith(github.event.comment.body, '/destroy')) || github.event.action == 'closed' &&
       contains(github.event.pull_request.labels.*.name, 'deployed') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/cleanup-pr-preview@HCA-NA-add-huma-server-actions
         with:
@@ -324,7 +324,7 @@ jobs:
     name: Automatic Rebase
     if: ${{ github.event.issue.pull_request != '' &&
       contains(github.event.comment.body, '/rebase') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/rebase@HCA-NA-add-huma-server-actions
         with:
@@ -335,7 +335,7 @@ jobs:
     if: ${{ inputs.dev_mongo_db_name != '' &&
       ((github.event.schedule != '' && !endsWith(github.event.schedule, '1-5')) ||
         needs.task.outputs.is_full_dump == 'true') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     needs: task
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
@@ -354,7 +354,7 @@ jobs:
     if: ${{ inputs.dev_mongo_db_name != '' &&
       ((github.event.schedule != '' && endsWith(github.event.schedule, '1-5')) ||
         needs.task.outputs.is_quick_dump == 'true') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     needs: task
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
@@ -373,7 +373,7 @@ jobs:
     if: ${{ inputs.qa_mongo_db_name != '' &&
       ((github.event.schedule != '' && !endsWith(github.event.schedule, '1-5')) ||
         needs.task.outputs.is_full_dump == 'true') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
         with:
@@ -391,7 +391,7 @@ jobs:
     if: ${{ inputs.qa_mongo_db_name != '' &&
       ((github.event.schedule != '' && endsWith(github.event.schedule, '1-5')) ||
         needs.task.outputs.is_quick_dump == 'true') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/dump-mongodb-db-to-bucket@HCA-NA-add-huma-server-actions
         with:
@@ -409,7 +409,7 @@ jobs:
     if: ${{ github.event.issue.pull_request
       && github.event.issue.state == 'open'
       && startsWith(github.event.comment.body, '/run-migration') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/run-migration@HCA-NA-add-huma-server-actions
         with:
@@ -423,7 +423,7 @@ jobs:
 
   change-logs:
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-') }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/change-logs@HCA-NA-add-huma-server-actions
         with:
@@ -435,14 +435,14 @@ jobs:
 
   help-pr-preview:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/help-pr-preview@HCA-NA-add-huma-server-actions
 
   # /publishing to dev and QA
   publish-task:
     name: Check if this flow must be run at all or not
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     outputs:
       is_publish_task: ${{ steps.action.outputs.is_publish_task }}
     steps:
@@ -454,7 +454,7 @@ jobs:
     needs: publish-task
     if: ${{ needs.publish-task.outputs.is_publish_task }}
     name: Run tests
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/1-tests@HCA-NA-add-huma-server-actions
         with:
@@ -470,7 +470,7 @@ jobs:
      - publish-task
     if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Publish coverage results
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/2-publish-coverage-results@HCA-NA-add-huma-server-actions
 
@@ -480,7 +480,7 @@ jobs:
      - publish-task
     if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Publish test results
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/3-publish-test-results@HCA-NA-add-huma-server-actions
 
@@ -490,7 +490,7 @@ jobs:
      - publish-task
     if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Build and push py-${{ inputs.server_name }} image
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/4-build-and-push@HCA-NA-add-huma-server-actions
         with:
@@ -506,7 +506,7 @@ jobs:
      - publish-task
     if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Update DEV env
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/5-deploy@HCA-NA-add-huma-server-actions
         with:
@@ -524,7 +524,7 @@ jobs:
     if: ${{ needs.publish-task.outputs.is_publish_task && success() }}
     name: Update QA env
     environment: QA
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-20.04
     steps:
       - uses: huma-engineering/huma-common-actions/server-ci/actions/publish-dev-qa/5-deploy@HCA-NA-add-huma-server-actions
         with:
