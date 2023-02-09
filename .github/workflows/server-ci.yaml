@@ -207,7 +207,7 @@ jobs:
           issue_number: ${{ env.issue_number }}
           head_sha: ${{ needs.deploy-check.outputs.head_sha }}
           chart_version: ${{ needs.deploy-chart.outputs.version }}
-          is_deployed: ${{ needs.task.outputs.is_deploy }}
+          is_deploy: ${{ needs.task.outputs.is_deploy }}
           grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
 
   deploy-restore-db:
