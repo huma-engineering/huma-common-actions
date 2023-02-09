@@ -9,6 +9,7 @@ inputs:
   chart_url: { description: Chart URL, required: true }
   clean_workload: { description: Delete workload of compose-operator, not resources, default: "false", required: false }
   cluster_name: { description: GKE cluster name, required: true }
+  grafana_cluster_name: { description: GKE cluster name in grafana, required: true }
   db_provider: { description: MongoDB Cluster provider, required: true }
   gcp_credentials: { description: GCP Service Account Key to deploy workload, required: true }
   github_token: { description: A Github token PAT, required: true }
@@ -128,7 +129,7 @@ runs:
       env:
         grafana_api_key: ${{ inputs.grafana_api_key }}
         grafana_host: ${{ inputs.grafana_host }}
-        cluster_name: ${{ inputs.cluster_name }}
+        cluster_name: ${{ inputs.grafana_cluster_name }}
         app_name: ${{ inputs.app_name }}
         app_namespace: ${{ inputs.app_namespace }}
         action_path: ${{ github.action_path }}
