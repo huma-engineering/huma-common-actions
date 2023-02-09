@@ -15,6 +15,8 @@ jq --arg app_name "$app_name" \
     | .dashboard.tags += [$app_name]
     | .message = "Create " + $app_name + "-logs dashboard"' ${action_path}/server-logs.json > ${app_name}.json
 
+cat ${app_name}.json
+
 response=$(curl -sS -XPOST -H "Authorization: Bearer ${grafana_api_key}" \
   -H "Content-Type: application/json" \
   -L ${grafana_host}/api/dashboards/db \
