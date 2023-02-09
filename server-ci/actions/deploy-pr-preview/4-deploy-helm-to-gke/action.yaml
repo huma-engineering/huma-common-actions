@@ -26,6 +26,7 @@ inputs:
   chart_version: { required: true, description: Helm chart version in GHCR }
   is_deploy: { required: true, description: Showing if command is /deploy }
   grafana_api_key: { required: true, description: API key for grafana }
+  grafana_host: { required: true, description: Grafana host }
 
 outputs:
   error:
@@ -122,15 +123,19 @@ runs:
       shell: bash
 
     - name: Create Grafana logs dashboard
-      id: dashboard
       if: inputs.is_deploy == 'true' && steps.error-value.outputs.error == 0
-      uses: huma-engineering/huma-github-actions/create-grafana-logs-dashboard@v0.14.0
-      with:
-        app_name: ${{ inputs.app_name }}
-        app_namespace: ${{ inputs.app_namespace }}
-        cluster_name: ${{ inputs.grafana_cluster_name }}
+      id: dashboard
+      env:
         grafana_api_key: ${{ inputs.grafana_api_key }}
         grafana_host: ${{ inputs.grafana_host }}
+        cluster_name: ${{ inputs.cluster_name }}
+        app_name: ${{ inputs.app_name }}
+        app_namespace: ${{ inputs.app_namespace }}
+        action_path: ${{ github.action_path }}
+      run: |
+        ${{ github.action_path }}/create-grafana-dashboard.sh && error=0 || error=$?
+        echo "::set-output name=error::$error"
+      shell: bash
 
     - name: Report on deploy success
       if: steps.error-value.outputs.error == 0

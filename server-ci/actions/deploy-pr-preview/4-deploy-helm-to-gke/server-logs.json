@@ -1,0 +1,225 @@
+{
+    "dashboard": {
+        "annotations": {
+            "list": [
+                {
+                    "builtIn": 1,
+                    "datasource": {
+                        "type": "grafana",
+                        "uid": "-- Grafana --"
+                    },
+                    "enable": true,
+                    "hide": true,
+                    "iconColor": "rgba(0, 211, 255, 1)",
+                    "name": "Annotations & Alerts",
+                    "target": {
+                        "limit": 100,
+                        "matchAny": false,
+                        "type": "dashboard"
+                    },
+                    "type": "dashboard"
+                }
+            ]
+        },
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "id": null,
+        "liveNow": true,
+        "panels": [
+            {
+                "datasource": {
+                    "type": "loki",
+                    "uid": "grafanacloud-logs"
+                },
+                "gridPos": {
+                    "h": 22,
+                    "w": 12,
+                    "x": 0,
+                    "y": 0
+                },
+                "id": 0,
+                "options": {
+                    "dedupStrategy": "none",
+                    "enableLogDetails": false,
+                    "prettifyLogMessage": false,
+                    "showCommonLabels": false,
+                    "showLabels": false,
+                    "showTime": false,
+                    "sortOrder": "Descending",
+                    "wrapLogMessage": true
+                },
+                "targets": [
+                    {
+                        "datasource": {
+                            "type": "loki",
+                            "uid": "grafanacloud-logs"
+                        },
+                        "expr": "{cluster_name=\"pr-preview\",container=\"server\",namespace=\"default\"}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "server-logs",
+                "type": "logs"
+            },
+            {
+                "datasource": {
+                    "type": "loki",
+                    "uid": "grafanacloud-logs"
+                },
+                "gridPos": {
+                    "h": 22,
+                    "w": 12,
+                    "x": 12,
+                    "y": 0
+                },
+                "id": 1,
+                "options": {
+                    "dedupStrategy": "none",
+                    "enableLogDetails": false,
+                    "prettifyLogMessage": false,
+                    "showCommonLabels": false,
+                    "showLabels": false,
+                    "showTime": false,
+                    "sortOrder": "Descending",
+                    "wrapLogMessage": true
+                },
+                "targets": [
+                    {
+                        "datasource": {
+                            "type": "loki",
+                            "uid": "grafanacloud-logs"
+                        },
+                        "expr": "{cluster_name=\"pr-preview\",container=\"server-worker\",namespace=\"default\"} |=\"error\"",
+                        "refId": "A"
+                    }
+                ],
+                "title": "worker-logs",
+                "type": "logs"
+            },
+            {
+                "datasource": {
+                    "type": "loki",
+                    "uid": "grafanacloud-logs"
+                },
+                "gridPos": {
+                    "h": 12,
+                    "w": 24,
+                    "x": 0,
+                    "y": 44
+                },
+                "id": 2,
+                "options": {
+                    "dedupStrategy": "none",
+                    "enableLogDetails": false,
+                    "prettifyLogMessage": false,
+                    "showCommonLabels": false,
+                    "showLabels": false,
+                    "showTime": false,
+                    "sortOrder": "Descending",
+                    "wrapLogMessage": true
+                },
+                "targets": [
+                    {
+                        "datasource": {
+                            "type": "loki",
+                            "uid": "grafanacloud-logs"
+                        },
+                        "expr": "{cluster_name=\"pr-preview\",container=\"server-beat\",namespace=\"default\"}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "beat-logs",
+                "type": "logs"
+            },
+            {
+                "datasource": {
+                    "type": "loki",
+                    "uid": "grafanacloud-logs"
+                },
+                "gridPos": {
+                    "h": 22,
+                    "w": 12,
+                    "x": 0,
+                    "y": 22
+                },
+                "id": 3,
+                "options": {
+                    "dedupStrategy": "none",
+                    "enableLogDetails": false,
+                    "prettifyLogMessage": false,
+                    "showCommonLabels": false,
+                    "showLabels": false,
+                    "showTime": false,
+                    "sortOrder": "Descending",
+                    "wrapLogMessage": true
+                },
+                "targets": [
+                    {
+                        "datasource": {
+                            "type": "loki",
+                            "uid": "grafanacloud-logs"
+                        },
+                        "expr": "{cluster_name=\"pr-preview\",container=\"cp\",namespace=\"default\"}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "cp-logs",
+                "type": "logs"
+            },
+            {
+                "datasource": {
+                    "type": "loki",
+                    "uid": "grafanacloud-logs"
+                },
+                "gridPos": {
+                    "h": 22,
+                    "w": 12,
+                    "x": 12,
+                    "y": 22
+                },
+                "id": 4,
+                "options": {
+                    "dedupStrategy": "none",
+                    "enableLogDetails": false,
+                    "prettifyLogMessage": false,
+                    "showCommonLabels": false,
+                    "showLabels": false,
+                    "showTime": false,
+                    "sortOrder": "Descending",
+                    "wrapLogMessage": true
+                },
+                "targets": [
+                    {
+                        "datasource": {
+                            "type": "loki",
+                            "uid": "grafanacloud-logs"
+                        },
+                        "expr": "{cluster_name=\"pr-preview\",container=\"server-cdc\",namespace=\"default\"} |=\"error\"",
+                        "refId": "A"
+                    }
+                ],
+                "title": "cdc-logs",
+                "type": "logs"
+            }
+        ],
+        "refresh": "30s",
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+            "logs",
+            "pr-preview"
+        ],
+        "time": {
+            "from": "now-1h",
+            "to": "now"
+        },
+        "timezone": "browser",
+        "title": "server-111-logs",
+        "uid": null,
+        "version": 0
+    },
+    "folderId": 23,
+    "message": "Create server-111-logs dashboard",
+    "overwrite": true
+}
