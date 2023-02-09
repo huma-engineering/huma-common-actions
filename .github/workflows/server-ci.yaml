@@ -209,6 +209,7 @@ jobs:
           chart_version: ${{ needs.deploy-chart.outputs.version }}
           is_deploy: ${{ needs.task.outputs.is_deploy }}
           grafana_api_key: ${{ secrets.PR_PREVIEW_GRAFANA_API_KEY }}
+          grafana_host: ${{ inputs.grafana_host }}
 
   deploy-restore-db:
     name: Restore MongoDB dump
