@@ -192,6 +192,7 @@ jobs:
           chart_url: oci://ghcr.io/huma-engineering/${{ inputs.server_name }}/huma-backend-requisites
           clean_workload: "true"
           cluster_name: ${{ inputs.cluster_name }}
+          grafana_cluster_name: ${{ inputs.grafana_cluster_name }}
           db_provider: ${{ env.db_provider }}
           gcp_credentials: ${{ secrets.GKE_SA_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
