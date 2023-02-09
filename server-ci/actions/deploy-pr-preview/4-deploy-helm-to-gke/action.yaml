@@ -37,6 +37,7 @@ outputs:
     description: Grafana dashboard url
     value: ${{ steps.dashboard.outputs.url }}
 
+
 runs:
   using: composite
   steps:
