@@ -14,6 +14,7 @@ server:
   countryCode: !ENV ${MP_COUNTRY_CODE}
   releaseDate: !ENV ${RELEASE_DATE}
 
+  supportEmail: "test@example.com"
   publisher:
     enable: true
 
