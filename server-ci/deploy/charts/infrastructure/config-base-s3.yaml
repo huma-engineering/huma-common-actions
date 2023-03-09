@@ -240,14 +240,6 @@ server:
       hashingAlgorithm: sha256
       localTimeOffset: 0
       timeStampSkew: 60
-    sentry:
-      dsn: !ENV ${SENTRY_DSN}
-      requestBodies: "always"
-      tracesSampleRate: 0.2
-      environment: !ENV ${SENTRY_ENV}
-      extraTags:
-        cluster: !ENV ${SENTRY_CLUSTER}
-        cloud: docker-compose
     breezometerApi:
       apiKey: !ENV ${MP_BREEZOMETER_API_KEY}
       domainNaturalConditionsApi: https://api.breezometer.com
