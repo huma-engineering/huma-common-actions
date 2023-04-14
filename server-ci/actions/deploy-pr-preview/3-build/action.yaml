@@ -17,17 +17,26 @@ runs:
       uses: actions/checkout@v3
       with:
         ref: ${{ inputs.head_sha }}
-        submodules: true
-        ssh-key: ${{ inputs.sdk_ssh_key }}
-
-#    - name: Clone Submodule
-#      if: ${{ inputs.include_sdk == 'true' }}
-#      uses: actions/checkout@v3
-#      with:
+#        submodules: true
 #        ssh-key: ${{ inputs.sdk_ssh_key }}
-#        repository: huma-engineering/huma-server-sdk
-#        path: libs/huma-server-sdk
+
+    - name: extract sdk  branch
+      id: sdk_branch
+      run: |
+        branch="$(cat .gitmodules | grep -i branch | cut -d'=' -f2 | cut -d' ' -f2)"
+        echo "::set-output name=branch::$branch"
+      shell: bash
+
+    - name: Clone Submodule
+      if: ${{ inputs.include_sdk == 'true' }}
+      uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ inputs.sdk_ssh_key }}
+        repository: huma-engineering/huma-server-sdk
+        path: libs/huma-server-sdk
+        ref: ${{ steps.sdk_branch.outputs.branch }}
 #        ref: ${{ inputs.sdk_ref }}
+
     - name: Login to ghcr
       run: echo ${{ inputs.github_token }} | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
       shell: bash

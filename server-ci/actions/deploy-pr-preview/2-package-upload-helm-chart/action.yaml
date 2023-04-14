@@ -23,18 +23,27 @@ runs:
   steps:
     - uses: actions/checkout@v3
       with:
-        submodules: true
-        ssh-key: ${{ inputs.sdk_ssh_key }}
+#        submodules: true
+#        ssh-key: ${{ inputs.sdk_ssh_key }}
         ref: ${{ inputs.head_sha }}
 
-#    - name: Clone Submodule
-#      if: ${{ inputs.include_sdk == 'true' }}
-#      uses: actions/checkout@v3
-#      with:
-#        ssh-key: ${{ inputs.sdk_ssh_key }}
-#        repository: huma-engineering/huma-server-sdk
-#        path: libs/huma-server-sdk
+    - name: extract sdk  branch
+      id: sdk_branch
+      run: |
+        branch="$(cat .gitmodules | grep -i branch | cut -d'=' -f2 | cut -d' ' -f2)"
+        echo "::set-output name=branch::$branch"
+      shell: bash
+
+    - name: Clone Submodule
+      if: ${{ inputs.include_sdk == 'true' }}
+      uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ inputs.sdk_ssh_key }}
+        repository: huma-engineering/huma-server-sdk
+        path: libs/huma-server-sdk
+        ref: ${{ steps.sdk_branch.outputs.branch }}
 #        ref: ${{ inputs.sdk_ref }}
+
     - name: Merge config-base.yaml and inputs.server_extra_config_file
       run: |-
         # yaml_dir='${{ github.action_path }}/../../../deploy/charts/infrastructure'
