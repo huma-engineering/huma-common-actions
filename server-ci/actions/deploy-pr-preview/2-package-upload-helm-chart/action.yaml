@@ -23,15 +23,18 @@ runs:
   steps:
     - uses: actions/checkout@v3
       with:
-        ref: ${{ inputs.head_sha }}
-    - name: Clone Submodule
-      if: ${{ inputs.include_sdk == 'true' }}
-      uses: actions/checkout@v3
-      with:
+        submodules: true
         ssh-key: ${{ inputs.sdk_ssh_key }}
-        repository: huma-engineering/huma-server-sdk
-        path: libs/huma-server-sdk
-        ref: ${{ inputs.sdk_ref }}
+        ref: ${{ inputs.head_sha }}
+
+#    - name: Clone Submodule
+#      if: ${{ inputs.include_sdk == 'true' }}
+#      uses: actions/checkout@v3
+#      with:
+#        ssh-key: ${{ inputs.sdk_ssh_key }}
+#        repository: huma-engineering/huma-server-sdk
+#        path: libs/huma-server-sdk
+#        ref: ${{ inputs.sdk_ref }}
     - name: Merge config-base.yaml and inputs.server_extra_config_file
       run: |-
         # yaml_dir='${{ github.action_path }}/../../../deploy/charts/infrastructure'

@@ -12,15 +12,18 @@ runs:
   steps:
     - name: checkout out current code using public action
       uses: actions/checkout@v3
-
-    - name: Clone Submodule
-      if: ${{ inputs.include_sdk == 'true' }}
-      uses: actions/checkout@v3
       with:
+        submodules: true
         ssh-key: ${{ inputs.sdk_ssh_key }}
-        repository: huma-engineering/huma-server-sdk
-        path: libs/huma-server-sdk
-        ref: ${{ inputs.sdk_ref }}
+
+#    - name: Clone Submodule
+#      if: ${{ inputs.include_sdk == 'true' }}
+#      uses: actions/checkout@v3
+#      with:
+#        ssh-key: ${{ inputs.sdk_ssh_key }}
+#        repository: huma-engineering/huma-server-sdk
+#        path: libs/huma-server-sdk
+#        ref: ${{ inputs.sdk_ref }}
 
     - name: "Get Project Version"
       id: project_version

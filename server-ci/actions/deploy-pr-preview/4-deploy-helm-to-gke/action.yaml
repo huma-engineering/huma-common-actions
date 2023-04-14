@@ -46,6 +46,7 @@ runs:
       with:
         ref: ${{ inputs.head_sha }}
 
+
     - name: Authenticate to Google Cloud via a Service Account Key JSON
       uses: google-github-actions/auth@v0
       with:
