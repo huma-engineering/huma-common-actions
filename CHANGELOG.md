@@ -10,6 +10,12 @@ project adheres to [Semantic Versioning](http://semver.org/).
 
 
 
+<a name="v1.1.1"></a>
+## [v1.1.1] - 2023-05-15
+Feature:
+- Upgrading openvpn helper action
+
+
 <a name="v1.1.0"></a>
 ## [v1.1.0] - 2022-11-08
 Bug fix:
@@ -31,6 +37,7 @@ Feature:
 
 
 
-[Unreleased]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.1.1...HEAD
+[v1.1.1]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/0.1...v1.0.0

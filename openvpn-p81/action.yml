@@ -17,7 +17,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - name: Install OpenVPN
+  - name: Install OpenVPN 
     run: |
       sudo apt update
       sudo apt install -y openvpn openvpn-systemd-resolved
@@ -27,7 +27,7 @@ runs:
       curl -s ${{ inputs.configfile-url }} -o config.ovpn
     shell: bash
   - name: Connect VPN
-    uses: "kota65535/github-openvpn-connect-action@v1"
+    uses: "kota65535/github-openvpn-connect-action@v2.0.2"
     with:
       config_file: ./config.ovpn
       username: ${{ inputs.username }}
