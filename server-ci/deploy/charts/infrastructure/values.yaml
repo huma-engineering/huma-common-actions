@@ -59,7 +59,7 @@ mongoExpress:
   requestSize: 10000kb
 
 redis:
-  storage: 64Mi
+  storage: 512Mi
 
 gcpProject:
   id: hu-global-sandbox

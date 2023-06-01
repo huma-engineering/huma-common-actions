@@ -83,7 +83,7 @@ spec:
   apps:
     - name: server
       # reserve for a CPU intensive dashboard
-      cpu: 250m
+      cpu: 50m
       memory: 384Mi
       command:
         - python
@@ -145,8 +145,8 @@ spec:
         periodSeconds: 60
     - name: server-worker
       # perform a lot of calculations in the background
-      cpu: 500m
-      memory: 768Mi
+      cpu: 350m
+      memory: 1250Mi
       command:
         - python
       args:
@@ -175,8 +175,8 @@ spec:
       ports:
         - 80
     - name: server-cdc
-      cpu: 100m
-      memory: 256Mi
+      cpu: 50m
+      memory: 384Mi
       command:
         - python
       args:
