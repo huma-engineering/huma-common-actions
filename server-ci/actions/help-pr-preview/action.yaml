@@ -11,7 +11,7 @@ runs:
       shell: bash
 
     - id: template
-      uses: chuhlomin/render-template@v1.4
+      uses: chuhlomin/render-template@v1.7
       with:
         template: ./help-sdk-pr-preview.md
 
