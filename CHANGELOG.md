@@ -15,6 +15,9 @@ project adheres to [Semantic Versioning](http://semver.org/).
 Bug fix:
 - [HCB-642] Fix GitHub workflow fo DCT installing helm-diff plugin twice
 
+test:
+- [HCB-642] Fix Test helmfile-pr action installing helm-diff plugin twice
+
 CI:
 - Dependabot version updates
 
