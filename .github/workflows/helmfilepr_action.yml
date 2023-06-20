@@ -2,9 +2,9 @@ name: Test helmfile-pr action
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
@@ -29,6 +29,7 @@ jobs:
         id: prdevid
         uses: ./helmfile-pr-diff
         with:
+          install-helm-plugins: no
           kubeconfig: $HOME/.kubeconfig
           helmfile-folder: ./examples/helmfile-pr
           helmfile-environment: dev
@@ -36,12 +37,14 @@ jobs:
       - name: Run helmfile apply for default environment
         uses: ./helmfile-apply
         with:
+          install-helm-plugins: no
           kubeconfig: $HOME/.kubeconfig
           helmfile-folder: ./examples/helmfile-pr
 
       - name: Run helmfile apply for dev environment
         uses: ./helmfile-apply
         with:
+          install-helm-plugins: no
           kubeconfig: $HOME/.kubeconfig
           helmfile-folder: ./examples/helmfile-pr
           comment-id: ${{ steps.prdevid.outputs.comment-id }}

@@ -1,20 +1,32 @@
-name: 'Helmfile apply'
-description: 'GH action for applying the helmfile on the given environment'
+name: "Helmfile apply"
+description: "GH action for applying the helmfile on the given environment"
 inputs:
-  kubeconfig: 
-    description: 'kubeconfig file path'
-    required: true
+  comment-id:
+    description: "The id of comment to put reaction"
+    required: false
+    default: ""
   helmfile-folder:
-    description: 'The folder of the helmfile'
+    description: "The folder of the helmfile"
     required: true
   helmfile-environment:
-    description: 'The environment of the helmfile'
+    description: "The environment of the helmfile"
     required: true
     default: default
-  comment-id:
-    description: 'The id of comment to put reaction'
+  install-kubectl:
+    description: "Install kubectl"
+    default: "no"
     required: false
-    default: ''
+  install-helm:
+    description: "Install helm"
+    default: "no"
+    required: false
+  install-helm-plugins:
+    description: "Install Helm plugins"
+    default: "yes"
+    required: false
+  kubeconfig:
+    description: "kubeconfig file path"
+    required: true
 
 runs:
   using: "composite"
@@ -22,10 +34,11 @@ runs:
     - name: Setup helmfile
       uses: mamezou-tech/setup-helmfile@v1.0.0
       with:
-        install-kubectl: no
-        install-helm: no
+        install-kubectl: ${{ inputs.install-kubectl }}
+        install-helm: ${{ inputs.install-helm }}
+        install-helm-plugins: ${{ inputs.install-helm-plugins }}
 
-    - name: Helmfile apply 
+    - name: Helmfile apply
       shell: bash
       run: |
         export KUBECONFIG=${{ inputs.kubeconfig }}

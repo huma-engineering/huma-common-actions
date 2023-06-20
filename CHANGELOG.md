@@ -10,6 +10,18 @@ project adheres to [Semantic Versioning](http://semver.org/).
 
 
 
+<a name="v1.2.0"></a>
+## [v1.2.0] - 2023-06-20
+Bug fix:
+- [HCB-642] Fix GitHub workflow fo DCT installing helm-diff plugin twice
+
+test:
+- [HCB-642] Fix Test helmfile-pr action installing helm-diff plugin twice
+
+CI:
+- Dependabot version updates
+
+
 <a name="v1.1.1"></a>
 ## [v1.1.1] - 2023-05-15
 Feature:
@@ -37,7 +49,9 @@ Feature:
 
 
 
-[Unreleased]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v...HEAD
+[v]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.2.0...v
+[v1.2.0]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/huma-engineering/huma-infrastructure-modules/compare/0.1...v1.0.0
