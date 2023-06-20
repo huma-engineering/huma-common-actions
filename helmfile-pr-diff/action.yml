@@ -1,22 +1,34 @@
-name: 'Helmfile diff with/without PR'
-description: 'GH action to make a diff with input arguments and commenting on pull request if possible'
+name: "Helmfile diff with/without PR"
+description: "GH action to make a diff with input arguments and commenting on pull request if possible"
 inputs:
-  kubeconfig: 
-    description: 'kubeconfig file path'
-    required: true
   helmfile-folder:
-    description: 'The folder of the helmfile'
+    description: "The folder of the helmfile"
     required: true
   helmfile-environment:
-    description: 'The environment of the helmfile'
+    description: "The environment of the helmfile"
     required: true
     default: default
+  install-kubectl:
+    description: "Install kubectl"
+    default: "no"
+    required: false
+  install-helm:
+    description: "Install helm"
+    default: "no"
+    required: false
+  install-helm-plugins:
+    description: "Install Helm plugins"
+    default: "yes"
+    required: false
+  kubeconfig:
+    description: "kubeconfig file path"
+    required: true
 outputs:
   diff-output:
-    description: 'helmfile diff output'
+    description: "helmfile diff output"
     value: ${{ env.diffbody }}
   comment-id:
-    description: 'PR comment id'
+    description: "PR comment id"
     value: ${{ steps.cuc.outputs.comment-id }}
 
 runs:
@@ -26,19 +38,20 @@ runs:
     - name: Setup helmfile
       uses: mamezou-tech/setup-helmfile@v1.0.0
       with:
-        install-kubectl: no
-        install-helm: no
+        install-kubectl: ${{ inputs.install-kubectl }}
+        install-helm: ${{ inputs.install-helm }}
+        install-helm-plugins: ${{ inputs.install-helm-plugins }}
 
     # Diff
     - name: Helmfile diff
       id: diffid
       shell: bash
       run: |
-          export KUBECONFIG=${{ inputs.kubeconfig }}
-          cd ${{ inputs.helmfile-folder }} && helmfile --no-color -e ${{ inputs.helmfile-environment }} -i diff > /tmp/diff.txt
-          echo 'diffbody<<EOV' >> $GITHUB_ENV
-          cat /tmp/diff.txt >> $GITHUB_ENV
-          echo 'EOV' >> $GITHUB_ENV
+        export KUBECONFIG=${{ inputs.kubeconfig }}
+        cd ${{ inputs.helmfile-folder }} && helmfile --no-color -e ${{ inputs.helmfile-environment }} -i diff > /tmp/diff.txt
+        echo 'diffbody<<EOV' >> $GITHUB_ENV
+        cat /tmp/diff.txt >> $GITHUB_ENV
+        echo 'EOV' >> $GITHUB_ENV
 
     # PR commentator if possible
     - name: Find comment
@@ -47,8 +60,9 @@ runs:
       id: fc
       with:
         issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: '<summary>helmfile -e ${{ inputs.helmfile-environment }} -i diff</summary>'
+        comment-author: "github-actions[bot]"
+        body-includes: "<summary>helmfile -e ${{ inputs.helmfile-environment }} -i diff</summary>"
+
     - name: Create or update comment
       if: github.event_name == 'pull_request'
       id: cuc
