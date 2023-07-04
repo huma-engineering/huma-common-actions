@@ -48,9 +48,11 @@ runs:
       shell: bash
       run: |
         export KUBECONFIG=${{ inputs.kubeconfig }}
-        cd ${{ inputs.helmfile-folder }} && helmfile --no-color -e ${{ inputs.helmfile-environment }} -i diff > /tmp/diff.txt
+        cd ${{ inputs.helmfile-folder }} && helmfile --no-color -e ${{ inputs.helmfile-environment }} -i diff >\
+          ${{ runner.temp }}/diff.txt
         echo 'diffbody<<EOV' >> $GITHUB_ENV
-        cat /tmp/diff.txt >> $GITHUB_ENV
+        head -1000 ${{ runner.temp }}/diff.txt >> $GITHUB_ENV
+        echo "The helmfile diff output was truncated to 1000 lines" >> $GITHUB_ENV
         echo 'EOV' >> $GITHUB_ENV
 
     # PR commentator if possible
