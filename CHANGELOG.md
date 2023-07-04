@@ -11,8 +11,9 @@ project adheres to [Semantic Versioning](http://semver.org/).
 
 
 <a name="v1.2.0"></a>
-## [v1.2.0] - 2023-06-20
+## [v1.2.0] - 2023-07-04
 Bug fix:
+- [HCB-652] Fix the GitHub action helmfile-apply has Argument list too long
 - [HCB-642] Fix GitHub workflow fo DCT installing helm-diff plugin twice
 
 test:
