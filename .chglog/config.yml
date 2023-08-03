@@ -2,7 +2,7 @@ style: github
 template: CHANGELOG.tpl.md
 info:
   title: CHANGELOG
-  repository_url: https://github.com/huma-engineering/huma-infrastructure-modules
+  repository_url: https://github.com/huma-engineering/huma-common-actions
 options:
   commits:
     sort_by: Type
@@ -15,7 +15,6 @@ options:
         - ref
         - test
         - ci
-
   commit_groups:
     group_by: Type
     sort_by: Custom
@@ -28,26 +27,25 @@ options:
       - test
       - ci
     title_maps:
-      feat: Feature
-      fix: Bug fix
-      improvement: Improvement
-      docs: docs
-      ref: refactor
-      test: test
+      feat: FEATURES
+      fix: BUG FIXES
+      improvement: ENHANCEMENTS
+      docs: DOCS
+      ref: REFACTORS
+      test: TESTS
       ci: CI
-
   header:
     pattern: "^(.+)\\s*:\\s*(.+)$"
     pattern_maps:
       - Type
       - Subject
-
-  issues: #HCB-
+  issues:
+    prefix:
+      -  #
   notes:
     keywords:
       - BREAKING CHANGES
       - NOTES
-
   refs:
     actions:
       - Closes
