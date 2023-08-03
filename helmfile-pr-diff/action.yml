@@ -48,8 +48,8 @@ runs:
       shell: bash
       run: |
         export KUBECONFIG=${{ inputs.kubeconfig }}
-        cd ${{ inputs.helmfile-folder }} && helmfile --no-color -e ${{ inputs.helmfile-environment }} -i diff >\
-          ${{ runner.temp }}/diff.txt
+        cd ${{ inputs.helmfile-folder }} && helmfile --no-color -e ${{ inputs.helmfile-environment }} \
+          diff --context 3 > ${{ runner.temp }}/diff.txt
         echo 'diffbody<<EOV' >> $GITHUB_ENV
         head -1000 ${{ runner.temp }}/diff.txt >> $GITHUB_ENV
         echo "The helmfile diff output was truncated to 1000 lines" >> $GITHUB_ENV
@@ -62,8 +62,8 @@ runs:
       id: fc
       with:
         issue-number: ${{ github.event.pull_request.number }}
-        comment-author: "github-actions[bot]"
-        body-includes: "<summary>helmfile -e ${{ inputs.helmfile-environment }} -i diff</summary>"
+        comment-author: github-actions[bot]
+        body-includes: <summary>helmfile -e ${{ inputs.helmfile-environment }} diff --context 3</summary>
 
     - name: Create or update comment
       if: github.event_name == 'pull_request'
@@ -75,7 +75,7 @@ runs:
         body: |
           ### Diff
           <details>
-            <summary>helmfile -e ${{ inputs.helmfile-environment }} -i diff</summary>
+            <summary>helmfile -e ${{ inputs.helmfile-environment }} diff --context 3</summary>
 
             ```diff
             ${{ env.diffbody }}

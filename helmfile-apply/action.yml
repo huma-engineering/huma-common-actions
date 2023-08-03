@@ -42,7 +42,7 @@ runs:
       shell: bash
       run: |
         export KUBECONFIG=${{ inputs.kubeconfig }}
-        cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply
+        cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply --context 3
 
     - name: Put reaction on the comment
       if: ${{ (inputs.comment-id != null) && (github.event_name == 'pull_request') }}
