@@ -1,20 +1,21 @@
 # Test Operations Makefile
 
 SHELL := bash
-GIT_CHGLOG = $(shell which git-chglog)
+# Update this value when you upgrade the version of your project.
+VERSION ?= 1.2.1
 
 .PHONY: changelog
-changelog: git-chglog ## Generate a Changelog for next version read from the git tags. Comment with "chore(CHANGE): update changelog"
-	$(GIT_CHGLOG) --next-tag v$(VERSION) > CHANGELOG.md
+GIT_CHGLOG=git-chglog
+JIRA_TASK_PATH:=https://medopadteam.atlassian.net/browse/
+JIRA_PROJECT=HCB
+changelog: ## Generate a Changelog for versions read from the Git tags. Comment with "chore(CHANGE): update changelog"
+	$(call go-get-tool,$(GIT_CHGLOG),github.com/git-chglog/git-chglog/cmd/git-chglog@latest)
+	tools/scripts/generate-changelog.sh ${VERSION} ${JIRA_TASK_PATH} ${JIRA_PROJECT}
 
-.PHONY: git-chglog
-git-chglog: ## Download git-chglog locally if necessary.
-ifeq (,$(shell which git-chglog 2>/dev/null))
-	@{ \
-	set -ex ;\
-	go get -u github.com/git-chglog/git-chglog/cmd/git-chglog ;\
-	}
-endif
+# go-get-tool installs package $2 to the $GOPATH/bin/$1 if not exist.
+define go-get-tool
+@[ -f $(GOPATH)/bin/$(1) ] || go install $(2)
+endef
 
 .PHONY: help all
 help:

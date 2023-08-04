@@ -32,7 +32,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup helmfile
-      uses: mamezou-tech/setup-helmfile@v1.0.0
+      uses: mamezou-tech/setup-helmfile@v1.2.0
       with:
         install-kubectl: ${{ inputs.install-kubectl }}
         install-helm: ${{ inputs.install-helm }}
@@ -42,7 +42,7 @@ runs:
       shell: bash
       run: |
         export KUBECONFIG=${{ inputs.kubeconfig }}
-        cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply
+        cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply --context 3
 
     - name: Put reaction on the comment
       if: ${{ (inputs.comment-id != null) && (github.event_name == 'pull_request') }}
