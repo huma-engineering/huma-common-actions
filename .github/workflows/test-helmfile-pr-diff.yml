@@ -1,4 +1,4 @@
-name: Test helmfile-pr action
+name: Test helmfile-pr-diff action
 
 on:
   push:
@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test-helmfile-pr-diff:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Start minikube
         run: |

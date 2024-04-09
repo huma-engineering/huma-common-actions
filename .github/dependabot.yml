@@ -9,3 +9,15 @@ updates:
     directory: /
     schedule:
       interval: daily
+  - package-ecosystem: github-actions
+    directory: /helmfile-apply
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /helmfile-pr-diff
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /openvpn-p81
+    schedule:
+      interval: daily

@@ -9,6 +9,13 @@ project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [v1.3.0] - 2024-04-09
+
+FEATURES:
+
+- [HCB-697] update setup-helmfile node20, helmfile v0.161.0, helm v3.14.0
+
+
 ## [v1.2.1] - 2023-08-03
 
 ENHANCEMENTS:
@@ -62,11 +69,13 @@ FEATURES:
 ## 0.1 - 2022-01-09
 
 
-[Unreleased]: https://github.com/huma-engineering/huma-common-actions/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/huma-engineering/huma-common-actions/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/huma-engineering/huma-common-actions/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/huma-engineering/huma-common-actions/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/huma-engineering/huma-common-actions/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/huma-engineering/huma-common-actions/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/huma-engineering/huma-common-actions/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/huma-engineering/huma-common-actions/compare/0.1...v1.0.0
+[HCB-697]: https://medopadteam.atlassian.net/browse/HCB-697
 [HCB-652]: https://medopadteam.atlassian.net/browse/HCB-652
 [HCB-642]: https://medopadteam.atlassian.net/browse/HCB-642

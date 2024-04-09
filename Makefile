@@ -2,7 +2,7 @@
 
 SHELL := bash
 # Update this value when you upgrade the version of your project.
-VERSION ?= 1.2.1
+VERSION ?= 1.3.0
 
 .PHONY: changelog
 GIT_CHGLOG=git-chglog

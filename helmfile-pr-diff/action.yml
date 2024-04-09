@@ -36,7 +36,7 @@ runs:
   steps:
     # Setup
     - name: Setup helmfile
-      uses: mamezou-tech/setup-helmfile@v1.2.0
+      uses: mamezou-tech/setup-helmfile@v2.0.0
       with:
         install-kubectl: ${{ inputs.install-kubectl }}
         install-helm: ${{ inputs.install-helm }}
@@ -58,7 +58,7 @@ runs:
     # PR commentator if possible
     - name: Find comment
       if: github.event_name == 'pull_request'
-      uses: peter-evans/find-comment@v2
+      uses: peter-evans/find-comment@v3
       id: fc
       with:
         issue-number: ${{ github.event.pull_request.number }}
@@ -68,7 +68,7 @@ runs:
     - name: Create or update comment
       if: github.event_name == 'pull_request'
       id: cuc
-      uses: peter-evans/create-or-update-comment@v2
+      uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
