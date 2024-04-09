@@ -27,7 +27,7 @@ runs:
       curl -s ${{ inputs.configfile-url }} -o config.ovpn
     shell: bash
   - name: Connect VPN
-    uses: "kota65535/github-openvpn-connect-action@v2.0.2"
+    uses: kota65535/github-openvpn-connect-action@v3
     with:
       config_file: ./config.ovpn
       username: ${{ inputs.username }}

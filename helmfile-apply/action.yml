@@ -45,13 +45,18 @@ runs:
         cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply --context 3
 
     - name: Put reaction on the comment
-      if: ${{ (inputs.comment-id != null) && (github.event_name == 'pull_request') }}
-      uses: peter-evans/create-or-update-comment@v2
+      if: inputs.comment-id != null && github.event_name == 'pull_request'
+      uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ inputs.comment-id }}
         reactions: rocket
 
-    - uses: actions-ecosystem/action-add-labels@v1
-      if: ${{ (github.event_name == 'pull_request') }}
-      with:
-        labels: deployed
+    - name: Set labels on PR
+      if: github.event_name == 'pull_request'
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        gh issue edit ${{ github.event.pull_request.number || github.event.issue.number }} \
+          --add-label "deployed" || :
+      shell: bash
