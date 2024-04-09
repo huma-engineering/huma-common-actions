@@ -36,7 +36,7 @@ runs:
   steps:
     # Setup
     - name: Setup helmfile
-      uses: mamezou-tech/setup-helmfile@v1.2.0
+      uses: mamezou-tech/setup-helmfile@v2.0.0
       with:
         install-kubectl: ${{ inputs.install-kubectl }}
         install-helm: ${{ inputs.install-helm }}
