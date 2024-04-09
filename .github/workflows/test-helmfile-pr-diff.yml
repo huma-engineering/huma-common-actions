@@ -1,4 +1,4 @@
-name: Test helmfile-pr action
+name: Test helmfile-pr-diff action
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test-helmfile-pr-diff:
     runs-on: ubuntu-latest
 
     steps:
