@@ -1,0 +1,44 @@
+name: "Helmfile diff with/without PR"
+description: "GH action to make a diff with input arguments and commenting on pull request if possible"
+inputs:
+  helmfile-folder:
+    description: "The folder of the helmfile"
+    required: true
+  helmfile-environment:
+    description: "The environment of the helmfile"
+    required: true
+    default: default
+  install-kubectl:
+    description: "Install kubectl"
+    default: "no"
+    required: false
+  install-helm:
+    description: "Install helm"
+    default: "no"
+    required: false
+  install-helm-plugins:
+    description: "Install Helm plugins"
+    default: "yes"
+    required: false
+  kubeconfig:
+    description: "kubeconfig file path"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    # Setup
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v2.0.0
+      with:
+        install-kubectl: ${{ inputs.install-kubectl }}
+        install-helm: ${{ inputs.install-helm }}
+        install-helm-plugins: ${{ inputs.install-helm-plugins }}
+
+    # Diff
+    - name: Helmfile diff
+      shell: bash
+      run: |
+        export KUBECONFIG=${{ inputs.kubeconfig }}
+        cd ${{ inputs.helmfile-folder }} && \
+        helmfile -e ${{ inputs.helmfile-environment }} diff --context 3
