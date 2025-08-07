@@ -11,7 +11,7 @@ inputs:
 outputs:
   short_sha:
     description: The short SHA of the commit used for the Docker image tag
-    value: ${{ steps.get-sha.outputs.short_sha }}
+    value: ${{ steps.get-short-sha.outputs.short_sha }}
 
 runs:
   using: "composite"
