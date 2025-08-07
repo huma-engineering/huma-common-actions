@@ -8,6 +8,11 @@ inputs:
     required: true
     type: string
 
+outputs:
+  short_sha:
+    description: The short SHA of the commit used for the Docker image tag
+    value: ${{ env.SHORT_SHA }}
+
 runs:
   using: "composite"
   steps:
