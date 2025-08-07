@@ -18,7 +18,9 @@ runs:
   steps:
     - name: Get short SHA
       id: get-short-sha
-      run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      run: |-
+        echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Set up Docker Buildx
