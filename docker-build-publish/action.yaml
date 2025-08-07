@@ -11,12 +11,13 @@ inputs:
 outputs:
   short_sha:
     description: The short SHA of the commit used for the Docker image tag
-    value: ${{ env.SHORT_SHA }}
+    value: ${{ steps.get-sha.outputs.short_sha }}
 
 runs:
   using: "composite"
   steps:
     - name: Get short SHA
+      id: get-short-sha
       run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
       shell: bash
 
