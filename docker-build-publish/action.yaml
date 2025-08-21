@@ -7,6 +7,14 @@ inputs:
   github_token:
     required: true
     type: string
+  context:
+    required: false
+    type: string
+    default: "."
+  tags:
+    required: false
+    type: string
+    default: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ env.SHORT_SHA }}
 
 outputs:
   short_sha:
@@ -36,6 +44,6 @@ runs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ${{ inputs.context }}
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ env.SHORT_SHA }}
+        tags: ${{ inputs.tags }}
