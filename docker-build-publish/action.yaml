@@ -7,7 +7,18 @@ inputs:
   github_token:
     required: true
     type: string
-
+  context:
+    required: false
+    type: string
+    default: "."
+  image_name:
+    required: false
+    type: string
+    default: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+  secrets:
+    required: false
+    type: string
+    default: ""
 outputs:
   short_sha:
     description: The short SHA of the commit used for the Docker image tag
@@ -36,6 +47,7 @@ runs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ${{ inputs.context }}
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ env.SHORT_SHA }}
+        tags: ${{ inputs.image_name }}:${{ env.SHORT_SHA }}
+        secrets: ${{ inputs.secrets }}
