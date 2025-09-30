@@ -4,10 +4,12 @@ description: Build and publish a Docker image to GitHub Container Registry
 inputs:
   github_username:
     description: "GitHub username for authentication"
-    required: true
+    required: false
+    default: ${{ github.actor }}
   github_token:
     description: "GitHub token for authentication"
-    required: true
+    required: false
+    default: ${{ github.token }}
   context:
     description: "Docker build context path"
     required: false
