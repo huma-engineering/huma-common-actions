@@ -17,7 +17,13 @@ jobs:
       - name: Start minikube
         run: |
           minikube start
-          minikube kubectl config view >> $HOME/.kubeconfig
+          minikube kubectl config view > $HOME/.kubeconfig
+          
+      - name: Encode kubeconfig
+        id: kubeconfig
+        run: |
+          echo "kubeconfig_base64=$(base64 -w 0 $HOME/.kubeconfig)" >> $GITHUB_OUTPUT
+          
       - name: Run PR helmfile for default environment
         id: prid
         uses: ./helmfile-pr-diff
@@ -29,7 +35,6 @@ jobs:
         id: prdevid
         uses: ./helmfile-pr-diff
         with:
-          install-helm-plugins: no
           kubeconfig: $HOME/.kubeconfig
           helmfile-folder: ./examples/helmfile-pr
           helmfile-environment: dev
@@ -37,14 +42,13 @@ jobs:
       - name: Run helmfile apply for default environment
         uses: ./helmfile-apply
         with:
-          install-helm-plugins: no
-          kubeconfig: $HOME/.kubeconfig
+          kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig_base64 }}
           helmfile-folder: ./examples/helmfile-pr
+          helmfile-environment: default
 
       - name: Run helmfile apply for dev environment
         uses: ./helmfile-apply
         with:
-          install-helm-plugins: no
-          kubeconfig: $HOME/.kubeconfig
+          kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig_base64 }}
           helmfile-folder: ./examples/helmfile-pr
-          comment-id: ${{ steps.prdevid.outputs.comment-id }}
+          helmfile-environment: dev
