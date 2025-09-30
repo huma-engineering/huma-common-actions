@@ -20,7 +20,7 @@ inputs:
     description: "Prefix for the Docker image tag"
     required: false
     default: ""
-  image_tag_postfix:
+  image_tag_suffix:
     description: "Prefix for the Docker image tag"
     required: false
     default: ""
