@@ -25,13 +25,6 @@ runs:
         echo ${{ inputs.kubeconfig }} | base64 -d > ~/.kube/config
         chmod 600 ~/.kube/config
 
-    # - name: Log in to GitHub Container Registry for Helm
-    #   shell: bash
-    #   env:
-    #     GITHUB_TOKEN: ${{ github.token }}
-    #   run: |
-    #     echo $GITHUB_TOKEN | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
@@ -42,5 +35,9 @@ runs:
     - name: Deploy with Helmfile
       uses: helmfile/helmfile-action@v2.0.5
       with:
-        helmfile-args: apply --environment ${{ inputs.helmfile_environment }} --context 5 ${{ inputs.helmfile_extra_args }}
         helmfile-workdirectory: ${{ inputs.helmfile_workdirectory }}
+        helmfile-args: >
+          apply
+          --environment ${{ inputs.helmfile_environment }}
+          --context 5
+          ${{ inputs.helmfile_extra_args }}
