@@ -1,62 +1,32 @@
 name: "Helmfile apply"
 description: "GH action for applying the helmfile on the given environment"
 inputs:
-  comment-id:
-    description: "The id of comment to put reaction"
-    required: false
-    default: ""
   helmfile-folder:
     description: "The folder of the helmfile"
     required: true
   helmfile-environment:
     description: "The environment of the helmfile"
     required: true
-    default: default
-  install-kubectl:
-    description: "Install kubectl"
-    default: "no"
-    required: false
-  install-helm:
-    description: "Install helm"
-    default: "no"
-    required: false
-  install-helm-plugins:
-    description: "Install Helm plugins"
-    default: "yes"
-    required: false
   kubeconfig:
-    description: "kubeconfig file path"
+    description: "base64 encoded kubeconfig file content"
     required: true
+  helmfile-args:
+    description: "The arguments of the helmfile"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
   steps:
-    - name: Setup helmfile
-      uses: mamezou-tech/setup-helmfile@v2.0.0
-      with:
-        install-kubectl: ${{ inputs.install-kubectl }}
-        install-helm: ${{ inputs.install-helm }}
-        install-helm-plugins: ${{ inputs.install-helm-plugins }}
-
-    - name: Helmfile apply
+    - name: Set up kubeconfig
       shell: bash
       run: |
-        export KUBECONFIG=${{ inputs.kubeconfig }}
-        cd ${{ inputs.helmfile-folder }} && helmfile -e ${{ inputs.helmfile-environment }} apply --context 3
+        mkdir -p ~/.kube
+        echo ${{ inputs.kubeconfig }} | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
 
-    - name: Put reaction on the comment
-      if: inputs.comment-id != null && github.event_name == 'pull_request'
-      uses: peter-evans/create-or-update-comment@v4
+    - name: Deploy with Helmfile
+      uses: helmfile/helmfile-action@v2.0.5
       with:
-        comment-id: ${{ inputs.comment-id }}
-        reactions: rocket
-
-    - name: Set labels on PR
-      if: github.event_name == 'pull_request'
-      env:
-        GH_TOKEN: ${{ github.token }}
-        GH_REPO: ${{ github.repository }}
-      run: |
-        gh issue edit ${{ github.event.pull_request.number || github.event.issue.number }} \
-          --add-label "deployed" || :
-      shell: bash
+        helmfile-args: apply --environment ${{ inputs.helmfile-environment }} --context 5 ${{ inputs.helmfile-args }}
+        helmfile-workdirectory: ${{ inputs.helmfile-folder }}

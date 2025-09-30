@@ -1,43 +1,76 @@
-name: Build and Push Docker Image
+name: Build and Publish Docker Image
+description: Build and publish a Docker image to GitHub Container Registry
 
 inputs:
   github_username:
+    description: "GitHub username for authentication"
     required: true
-    type: string
   github_token:
+    description: "GitHub token for authentication"
     required: true
-    type: string
   context:
+    description: "Docker build context path"
     required: false
-    type: string
     default: "."
   image_name:
+    description: "Docker image name"
     required: false
-    type: string
     default: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-  image_tag_prefix:
+  image_tag_postfix:
+    description: "Prefix for the Docker image tag"
     required: false
-    type: string
     default: ""
   secrets:
+    description: "Docker build secrets"
     required: false
-    type: string
     default: ""
+  build_args:
+    description: "Docker build arguments (key=value pairs, one per line)"
+    required: false
+    default: ""
+  dockerfile:
+    description: "Path to Dockerfile"
+    required: false
+    default: "Dockerfile"
+  target:
+    description: "Target build stage"
+    required: false
+    default: ""
+  platforms:
+    description: "Platforms to build for (comma-separated, e.g., linux/amd64,linux/arm64)"
+    required: false
+    default: "linux/amd64"
+  cache_from:
+    description: "Cache sources (comma-separated, e.g., type=gha,type=registry)"
+    required: false
+    default: "type=gha"
+  cache_to:
+    description: "Cache destinations (comma-separated, e.g., type=gha,type=registry)"
+    required: false
+    default: "type=gha,mode=max"
+  push:
+    description: "Whether to push the image to registry"
+    required: false
+    default: "true"
 outputs:
-  short_sha:
+  image_tag:
     description: The short SHA of the commit used for the Docker image tag
-    value: ${{ steps.get-short-sha.outputs.short_sha }}
+    value: ${{ steps.get-image-tag.outputs.IMAGE_TAG }}
+  image_digest:
+    description: The digest of the built image
+    value: ${{ steps.build.outputs.digest }}
+  image_id:
+    description: The ID of the built image
+    value: ${{ steps.build.outputs.imageid }}
 
 runs:
   using: "composite"
   steps:
-    - name: Get short SHA
-      id: get-short-sha
-      run: |-
-        SHORT_SHA="${{ inputs.image_tag_prefix }}$(git rev-parse --short HEAD)"
-        echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
-        echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+    - name: Get image tag for Docker image
+      id: get-image-tag
       shell: bash
+      run: |
+        echo "IMAGE_TAG=${GITHUB_SHA::7}-${{ inputs.image_tag_postfix }}" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -50,9 +83,15 @@ runs:
         password: ${{ inputs.github_token }}
 
     - name: Build and push Docker image
+      id: build
       uses: docker/build-push-action@v5
       with:
         context: ${{ inputs.context }}
-        push: true
-        tags: ${{ inputs.image_name }}:${{ env.SHORT_SHA }}
+        file: ${{ inputs.dockerfile }}
+        target: ${{ inputs.target }}
+        platforms: ${{ inputs.platforms }}
+        push: ${{ inputs.push }}
+        build-args: ${{ inputs.build_args }}
+        cache-from: ${{ inputs.cache_from }}
+        cache-to: ${{ inputs.cache_to }}
         secrets: ${{ inputs.secrets }}
