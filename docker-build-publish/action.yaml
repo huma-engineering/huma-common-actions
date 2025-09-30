@@ -21,7 +21,7 @@ inputs:
     required: false
     default: ""
   image_tag_suffix:
-    description: "Prefix for the Docker image tag"
+    description: "Suffix for the Docker image tag"
     required: false
     default: ""
   secrets:
@@ -35,7 +35,7 @@ inputs:
   dockerfile:
     description: "Path to Dockerfile"
     required: false
-    default: "Dockerfile"
+    default: "./Dockerfile"
   target:
     description: "Target build stage"
     required: false
@@ -75,10 +75,10 @@ runs:
       shell: bash
       run: |
         prefix="${{ inputs.image_tag_prefix }}"
-        postfix="${{ inputs.image_tag_postfix }}"
+        suffix="${{ inputs.image_tag_suffix }}"
         tag="${GITHUB_SHA::7}"
         [ -n "$prefix" ] && tag="$prefix-$tag"
-        [ -n "$postfix" ] && tag="$tag-$postfix"
+        [ -n "$suffix" ] && tag="$tag-$suffix"
         echo "IMAGE_TAG=$tag" >> $GITHUB_OUTPUT
         echo "IMAGE_TAG=$tag" >> $GITHUB_ENV
 
