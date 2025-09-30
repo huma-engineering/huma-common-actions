@@ -9,13 +9,13 @@ environments:
 ---
 
 repositories:
-  - name: ingress-nginx
-    url: https://kubernetes.github.io/ingress-nginx
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
 releases:
-  - chart: ingress-nginx/ingress-nginx
-    version: 4.1.0
-    name: nginx-ingress
+  - name: test-nginx
+    chart: bitnami/nginx
+    version: 15.14.0
     namespace: "{{ .Values.namespace }}"
     values:
-      - defaultBackend:
-          enabled: true
+      - service:
+          type: ClusterIP

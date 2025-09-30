@@ -35,7 +35,7 @@ inputs:
   dockerfile:
     description: "Path to Dockerfile"
     required: false
-    default: "{context}/Dockerfile"
+    default: "Dockerfile"
   target:
     description: "Target build stage"
     required: false
@@ -97,7 +97,7 @@ runs:
       uses: docker/build-push-action@v5
       with:
         context: ${{ inputs.context }}
-        file: ${{ inputs.dockerfile }}
+        file: ${{ inputs.context }}/${{ inputs.dockerfile }}
         target: ${{ inputs.target }}
         platforms: ${{ inputs.platforms }}
         push: ${{ inputs.push }}
