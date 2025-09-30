@@ -79,6 +79,7 @@ runs:
         tag="${GITHUB_SHA::7}"
         [ -n "$prefix" ] && tag="$prefix-$tag"
         [ -n "$suffix" ] && tag="$tag-$suffix"
+        tag="$(echo "$tag" | sed 's/[^a-zA-Z0-9.-]/-/g')"
         echo "IMAGE_TAG=$tag" >> $GITHUB_OUTPUT
         echo "IMAGE_TAG=$tag" >> $GITHUB_ENV
 
