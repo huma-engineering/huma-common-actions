@@ -35,6 +35,7 @@ jobs:
         id: prdevid
         uses: ./helmfile-pr-diff
         with:
+          install-helm-plugins: no
           kubeconfig: $HOME/.kubeconfig
           helmfile-folder: ./examples/helmfile-pr
           helmfile-environment: dev
