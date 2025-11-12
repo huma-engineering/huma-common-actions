@@ -35,7 +35,7 @@ runs:
     - name: Deploy with Helmfile
       uses: helmfile/helmfile-action@v2.0.5
       with:
-        helm-plugins: ''
+        helm-plugins: 'https://github.com/databus23/helm-diff.git'
         helmfile-workdirectory: ${{ inputs.helmfile_workdirectory }}
         helmfile-args: >
           apply
