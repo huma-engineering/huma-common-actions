@@ -35,6 +35,8 @@ runs:
     - name: Deploy with Helmfile
       uses: helmfile/helmfile-action@v2.0.5
       with:
+        helm-version: "v3.19.2"
+        helmfile-version: "v1.2.3"
         helmfile-workdirectory: ${{ inputs.helmfile_workdirectory }}
         helmfile-args: >
           apply
