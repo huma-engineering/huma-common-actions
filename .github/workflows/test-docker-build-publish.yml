@@ -3,11 +3,14 @@ name: Test docker-build-publish action
 on:
   push:
     branches: ["master"]
+    paths:
+      - "docker-build-publish/**"
+      - ".github/workflows/test-docker-build-publish.yml"
   pull_request:
     branches: ["master"]
-  paths:
-    - "docker-build-publish/**"
-    - ".github/workflows/test-docker-build-publish.yml"
+    paths:
+      - "docker-build-publish/**"
+      - ".github/workflows/test-docker-build-publish.yml"
   workflow_dispatch:
 
 permissions:

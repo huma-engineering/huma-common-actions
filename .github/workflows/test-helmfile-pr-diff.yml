@@ -3,11 +3,16 @@ name: Test helmfile-pr-diff action
 on:
   push:
     branches: ["master"]
+    paths:
+      - "helmfile-pr-diff/**"
+      - "helmfile-apply/**"
+      - ".github/workflows/test-helmfile-pr-diff.yml"
   pull_request:
     branches: ["master"]
-  paths:
-    - "helmfile-pr-diff/**"
-    - ".github/workflows/test-helmfile-pr-diff.yml"
+    paths:
+      - "helmfile-pr-diff/**"
+      - "helmfile-apply/**"
+      - ".github/workflows/test-helmfile-pr-diff.yml"
   workflow_dispatch:
 
 jobs:

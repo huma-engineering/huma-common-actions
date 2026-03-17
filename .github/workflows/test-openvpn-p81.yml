@@ -3,11 +3,14 @@ name: Test openvpn-p81 action
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - "openvpn-p81/**"
+      - ".github/workflows/test-openvpn-p81.yml"
   pull_request:
     branches: [ "master" ]
-  paths:
-    - "openvpn-p81/**"
-    - ".github/workflows/test-openvpn-p81.yml"
+    paths:
+      - "openvpn-p81/**"
+      - ".github/workflows/test-openvpn-p81.yml"
   workflow_dispatch:
 
 jobs:

@@ -3,11 +3,14 @@ name: Test hello action
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - "hello/**"
+      - ".github/workflows/test-hello.yml"
   pull_request:
     branches: [ "master" ]
-  paths:
-    - "hello/**"
-    - ".github/workflows/test-hello.yml"
+    paths:
+      - "hello/**"
+      - ".github/workflows/test-hello.yml"
   workflow_dispatch:
 
 jobs:
