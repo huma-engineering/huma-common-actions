@@ -44,12 +44,12 @@ jobs:
         uses: ./helmfile-apply
         with:
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig_base64 }}
-          helmfile-folder: ./examples/helmfile-pr
-          helmfile-environment: default
+          helmfile_workdirectory: ./examples/helmfile-pr
+          helmfile_environment: default
 
       - name: Run helmfile apply for dev environment
         uses: ./helmfile-apply
         with:
           kubeconfig: ${{ steps.kubeconfig.outputs.kubeconfig_base64 }}
-          helmfile-folder: ./examples/helmfile-pr
-          helmfile-environment: dev
+          helmfile_workdirectory: ./examples/helmfile-pr
+          helmfile_environment: dev

@@ -47,13 +47,13 @@ inputs:
     required: false
     default: "linux/amd64"
   cache_from:
-    description: "Cache sources (comma-separated, e.g., type=gha,type=registry)"
+    description: "Cache sources (comma-separated, e.g., type=registry,ref=ghcr.io/org/app:buildcache)"
     required: false
-    default: "type=gha"
+    default: "type=registry,ref=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:buildcache"
   cache_to:
-    description: "Cache destinations (comma-separated, e.g., type=gha,type=registry)"
+    description: "Cache destinations (comma-separated, e.g., type=registry,ref=ghcr.io/org/app:buildcache)"
     required: false
-    default: "type=gha,mode=max"
+    default: "type=registry,ref=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:buildcache,mode=max"
   push:
     description: "Whether to push the image to registry"
     required: false
