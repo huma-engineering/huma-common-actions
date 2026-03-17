@@ -1,0 +1,56 @@
+name: Test docker-build-publish action
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test-docker-build-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create test Docker build context
+        run: |
+          mkdir -p "${{ runner.temp }}/docker-build-publish-test"
+          cat <<'EOF' > "${{ runner.temp }}/docker-build-publish-test/Dockerfile"
+          FROM alpine:3.20
+          ARG APP_NAME=huma-common-actions
+          RUN printf '%s\n' "$APP_NAME" > /app-name.txt
+          CMD ["cat", "/app-name.txt"]
+          EOF
+
+      - name: Run docker-build-publish action
+        id: build_id
+        uses: ./docker-build-publish
+        with:
+          context: ${{ runner.temp }}/docker-build-publish-test
+          dockerfile: Dockerfile
+          build_args: |
+            APP_NAME=workflow-test
+          image_name: ghcr.io/${{ github.repository_owner }}/huma-common-actions-test
+          image_tag_prefix: test
+          image_tag_suffix: ci
+          cache_from: type=gha
+          cache_to: type=gha,mode=max
+          push: "false"
+
+      - name: Verify docker-build-publish outputs
+        run: |
+          expected_tag="test-${GITHUB_SHA::7}-ci"
+          actual_tag="${{ steps.build_id.outputs.image_tag }}"
+
+          echo "expected image tag: $expected_tag"
+          echo "actual image tag:   $actual_tag"
+          echo "image digest:       ${{ steps.build_id.outputs.image_digest }}"
+          echo "image id:           ${{ steps.build_id.outputs.image_id }}"
+
+          test "$actual_tag" = "$expected_tag"
