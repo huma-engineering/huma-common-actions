@@ -5,6 +5,9 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
+  paths:
+    - "helmfile-pr-diff/**"
+    - ".github/workflows/test-helmfile-pr-diff.yml"
   workflow_dispatch:
 
 jobs:
