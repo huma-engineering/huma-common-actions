@@ -1,0 +1,91 @@
+name: "Huma Token Broker"
+description: "Request a scoped GitHub Installation Access Token from the Token Broker service using OIDC authentication"
+inputs:
+  broker-url:
+    description: "The base URL of the token broker"
+    required: false
+    default: "https://github-token-broker.staging.huma.com"
+  repositories:
+    description: "Comma-separated list of repositories to request access to (e.g., huma-engineering/craft-tools,huma-engineering/shared-lib)"
+    required: true
+  permissions:
+    description: 'JSON object of permission scopes (e.g., {"contents": "read", "packages": "read"})'
+    required: true
+
+outputs:
+  token:
+    description: "The scoped GitHub Installation Access Token"
+    value: ${{ steps.broker.outputs.token }}
+  expires-at:
+    description: "ISO 8601 expiry timestamp of the token"
+    value: ${{ steps.broker.outputs.expires-at }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate OIDC availability
+      shell: bash
+      run: |
+        if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" ]]; then
+          echo "::error::OIDC token is not available. The calling workflow must set 'permissions: id-token: write' at the job or workflow level."
+          exit 1
+        fi
+
+    - name: Request broker token
+      id: broker
+      shell: bash
+      env:
+        BROKER_URL: ${{ inputs.broker-url }}
+        REPOSITORIES: ${{ inputs.repositories }}
+        PERMISSIONS: ${{ inputs.permissions }}
+      run: |
+        set -euo pipefail
+
+        # --- 1. Request OIDC JWT from GitHub Actions ---
+        oidc_response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${BROKER_URL}")
+
+        oidc_token=$(echo "${oidc_response}" | jq -r '.value')
+        if [[ -z "${oidc_token}" || "${oidc_token}" == "null" ]]; then
+          echo "::error::Failed to extract OIDC token from GitHub Actions response."
+          exit 1
+        fi
+        echo "::add-mask::${oidc_token}"
+
+        # --- 2. Build the broker request payload ---
+        repos_json=$(echo "${REPOSITORIES}" | jq -Rc '[split(",")[] | gsub("^\\s+|\\s+$"; "")]')
+
+        payload=$(jq -nc \
+          --argjson repositories "${repos_json}" \
+          --argjson permissions "${PERMISSIONS}" \
+          '{repositories: $repositories, permissions: $permissions}')
+
+        # --- 3. Call the Token Broker ---
+        http_response=$(curl -sS -w "\n%{http_code}" \
+          -X POST \
+          -H "Authorization: Bearer ${oidc_token}" \
+          -H "Content-Type: application/json" \
+          -d "${payload}" \
+          "${BROKER_URL}/api/v1/tokens/")
+
+        http_body=$(echo "${http_response}" | sed '$d')
+        http_status=$(echo "${http_response}" | tail -1)
+
+        if [[ "${http_status}" -lt 200 || "${http_status}" -ge 300 ]]; then
+          echo "::error::Token Broker returned HTTP ${http_status}: ${http_body}"
+          exit 1
+        fi
+
+        # --- 4. Parse response and set outputs ---
+        token=$(echo "${http_body}" | jq -r '.token')
+        expires_at=$(echo "${http_body}" | jq -r '.expires_at')
+
+        if [[ -z "${token}" || "${token}" == "null" ]]; then
+          echo "::error::Broker response did not contain a valid token. Response: ${http_body}"
+          exit 1
+        fi
+
+        echo "::add-mask::${token}"
+        echo "token=${token}" >> "${GITHUB_OUTPUT}"
+        echo "expires-at=${expires_at}" >> "${GITHUB_OUTPUT}"
+        echo "Token acquired successfully (expires at ${expires_at})."
