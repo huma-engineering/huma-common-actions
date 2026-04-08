@@ -9,8 +9,9 @@ inputs:
     description: "Comma-separated list of repositories to request access to (e.g., huma-engineering/craft-tools,huma-engineering/shared-lib)"
     required: true
   permissions:
-    description: 'JSON object of permission scopes (e.g., {"contents": "read", "packages": "read"})'
-    required: true
+    description: 'JSON object of permission scopes (e.g., {"contents": "read", "packages": "read"}). Defaults to {"contents": "read"} when omitted.'
+    required: false
+    default: '{"contents":"read"}'
 
 outputs:
   token:
