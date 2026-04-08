@@ -15,7 +15,7 @@ A reusable composite GitHub Action that requests a scoped GitHub Installation Ac
 |-------|----------|-------------|
 | `broker-url` | No | The base URL of the token broker (default: `https://github-token-broker.staging.huma.com`) |
 | `repositories` | Yes | Comma-separated list of repositories to request access to (e.g., `huma-engineering/craft-tools,huma-engineering/shared-lib`) |
-| `permissions` | Yes | JSON object of permission scopes (e.g., `{"contents": "read", "packages": "read"}`) |
+| `permissions` | No | JSON object of permission scopes (e.g., `{"contents": "read", "packages": "read"}`). Defaults to `{"contents": "read"}` when omitted. |
 
 ## Outputs
 
@@ -39,6 +39,8 @@ Without this, the action will fail with a clear error message.
 
 ### Single repository
 
+`permissions` can be omitted when you only need repository read access; it defaults to `{"contents": "read"}`.
+
 ```yaml
 jobs:
   build:
@@ -52,7 +54,6 @@ jobs:
         uses: huma-engineering/huma-common-actions/huma-token-broker@main
         with:
           repositories: huma-engineering/craft-tools
-          permissions: '{"contents": "read"}'
 
       - name: Clone craft-tools
         run: git clone https://x-access-token:${{ steps.token.outputs.token }}@github.com/huma-engineering/craft-tools.git
@@ -91,7 +92,6 @@ jobs:
         with:
           broker-url: https://github-token-broker.prod.huma.com
           repositories: huma-engineering/craft-tools
-          permissions: '{"contents": "read"}'
 ```
 
 ### Using the token with npm
